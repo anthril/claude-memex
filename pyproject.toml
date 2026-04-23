@@ -13,6 +13,19 @@ dev = [
   "mypy>=1.11",
 ]
 
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# claude-memex is a Claude Code plugin shipped as a repo of markdown
+# templates, JSON, and Python hook scripts — NOT a Python distribution.
+# Tell setuptools there are zero modules/packages to install so that
+# `pip install -e ".[dev]"` works for contributor dev setup (pulling in
+# pytest/ruff/mypy) without setuptools trying to package the plugin
+# assets (hooks/, agents/, skills/, commands/, templates/, schemas/).
+py-modules = []
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
