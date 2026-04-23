@@ -9,7 +9,7 @@
 
 ## Inspired by
 
-This project is directly inspired by Andrej Karpathy's [`llm-wiki.md` gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) (April 2026), which describes a pattern for **LLM-maintained personal wikis** — raw sources on one side, a compounding wiki of LLM-authored markdown on the other, with the LLM doing all the bookkeeping.
+This project is directly inspired by Andrej Karpathy's [`llm-wiki.md`](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) (April 2026), which describes a pattern for **LLM-maintained personal wikis** — raw sources on one side, a compounding wiki of LLM-authored markdown on the other, with the LLM doing all the bookkeeping.
 
 Memex takes that idea and turns it into a Claude Code plugin:
 
