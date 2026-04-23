@@ -8,6 +8,10 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+# Build artefacts from `pip install -e`
+*.egg-info/
+build/
+dist/
 
 # Node (templates may ship examples that use it)
 node_modules/
