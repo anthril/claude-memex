@@ -1,0 +1,26 @@
+# Memex plugin — code owners
+#
+# Lines are evaluated top-to-bottom; the last matching pattern wins. Keep the
+# broadest pattern first and refine toward specific areas.
+
+# Default — everything needs an Anthril maintainer review
+*                                     @anthril/maintainers
+
+# Hook scripts — the core enforcement layer
+/hooks/                               @anthril/maintainers
+/hooks/scripts/_lib/                  @anthril/maintainers
+
+# Profiles — contributions welcome; owner review required for schema changes
+/templates/profiles/                  @anthril/maintainers
+/schemas/                             @anthril/maintainers
+
+# Migration tooling + tests
+/scripts/                             @anthril/maintainers
+/tests/                               @anthril/maintainers
+
+# Governance / security-sensitive files
+/LICENSE                              @anthril/maintainers
+/SECURITY.md                          @anthril/maintainers
+/CODE_OF_CONDUCT.md                   @anthril/maintainers
+/CONTRIBUTING.md                      @anthril/maintainers
+/.github/                             @anthril/maintainers

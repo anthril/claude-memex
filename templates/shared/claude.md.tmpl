@@ -1,0 +1,33 @@
+# {{ProjectName}} — Claude Instructions
+
+This project uses the [Memex](https://github.com/anthril/claude-memex) plugin to maintain a Claude-authored knowledge base under `.memex/`.
+
+## Agent contract
+
+All agents working in this repo MUST follow [`.memex/AGENTS.md`](.memex/AGENTS.md) for documentation, folder placement, and feature-completion requirements.
+
+The documentation system is enforced by hooks shipped in the `memex` Claude Code plugin. Edits that bypass it will be blocked at tool-call time.
+
+## Key indices
+
+- [`.memex/README.md`](.memex/README.md) — folder map
+- [`.memex/AGENTS.md`](.memex/AGENTS.md) — binding contract
+- [`.memex/index.md`](.memex/index.md) — catalogue of wiki pages
+- [`.memex/log.md`](.memex/log.md) — chronological ledger
+- [`.memex/.open-questions/`](.memex/.open-questions/) — unresolved items
+- [`memex.config.json`](memex.config.json) — schema
+
+## Runtime behaviour
+
+- Before any non-trivial task, invoke the `memex-planner` subagent or read the relevant `.memex/` pages directly
+- Never leave a question unresolved in prose — file it in `.open-questions/` or the owning doc's `## Open questions`
+- When the hook layer blocks a tool call, read the stderr message and fix the cause; do not bypass
+- After finishing a task, ensure the touched wiki pages have bumped `updated:` and a changelog entry if relevant
+
+## Profile
+
+This project was scaffolded with the `{{Profile}}` profile. See `.memex/AGENTS.md` §3 for the triggers-to-artifacts table specific to this profile.
+
+## Project-specific additions
+
+<!-- Put project-specific CLAUDE.md content here — build commands, gotchas, architectural notes, etc. This section is yours to edit; the sections above are maintained by Memex conventions. -->

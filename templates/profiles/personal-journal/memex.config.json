@@ -1,0 +1,59 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthril/claude-memex/main/schemas/memex.config.schema.json",
+  "version": "1",
+  "profile": "personal-journal",
+  "root": ".memex",
+
+  "allowedTopLevel": [
+    "README.md",
+    "AGENTS.md",
+    "index.md",
+    "log.md",
+    ".open-questions",
+    ".rules",
+    ".state",
+    "raw",
+    "wiki",
+    "reflections"
+  ],
+
+  "datedFolders": {
+    "paths": ["raw/entries", "reflections"],
+    "format": "DDMMYYYY-HHMM"
+  },
+
+  "readmeRequired": [
+    "wiki/topics/*",
+    "wiki/goals/*"
+  ],
+
+  "frontmatter": {
+    "appliesTo": ["**/README.md", "**/AGENTS.md", "wiki/**/*.md"],
+    "required": ["title", "slug", "type", "status", "created", "updated"],
+    "enum": {
+      "type": ["topic", "goal", "reflection", "entry", "open-question", "rule"],
+      "status": ["draft", "active", "archived"]
+    }
+  },
+
+  "naming": {
+    "exceptions": ["README.md", "AGENTS.md", ".resolved"]
+  },
+
+  "codeToDocMapping": [],
+
+  "log": {
+    "path": "log.md",
+    "entryPrefix": "## [{date}] {event} | {subject}"
+  },
+
+  "index": {
+    "path": "index.md",
+    "sections": ["Topics", "Goals", "Reflections", "Open Questions"]
+  },
+
+  "search": {
+    "engine": "grep",
+    "maxContextPages": 3
+  }
+}

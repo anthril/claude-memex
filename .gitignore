@@ -1,0 +1,42 @@
+# Memex runtime state in dogfood wikis
+.memex/.state/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node (templates may ship examples that use it)
+node_modules/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Secrets — safety net for users forking this repo
+.env
+.env.*
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+.aws/
+.azure/
+.gcp/
+
+# Reference
+.docs

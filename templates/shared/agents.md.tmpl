@@ -1,0 +1,48 @@
+---
+title: {{ProjectName}} Agent Contract
+slug: agents-contract
+type: rule
+status: active
+owner: {{owner|unassigned}}
+created: {{date}}
+updated: {{date}}
+---
+
+# Agent Contract
+
+This document is the binding contract for every agent operating on this project's `.memex/` tree. Hooks shipped by the [Memex](https://github.com/anthril/claude-memex) plugin enforce the contract at tool-call time — writes that violate it are blocked with a clear stderr message.
+
+## 1. Before starting work
+
+1. Read the README for the surface you're touching
+2. Check `.open-questions/` for the topic; resolve or link before proceeding
+3. Check `.audits/` (if the profile uses them) for prior findings
+4. Read relevant rules under `.rules/`
+
+## 2. Where documents live
+
+See [README.md](README.md) for the folder map and [`../memex.config.json`](../memex.config.json) for the authoritative schema (`allowedTopLevel`, `readmeRequired`, `frontmatter.required`).
+
+## 3. Required artifacts
+
+| Trigger | Required doc |
+|---|---|
+| <!-- profile-specific: fill in from the profile's AGENTS.md --> | |
+
+All artifacts require YAML frontmatter with at minimum: `title`, `slug`, `type`, `status`, `owner`, `created`, `updated`.
+
+## 4. Forbidden actions
+
+- Writing docs outside the taxonomy declared in `memex.config.json`
+- Bypassing hooks (no `--no-verify`-style workarounds)
+- Leaving `TODO` / `TBD` / `XXX` / `FIXME` markers inline — promote them to `.open-questions/` or a scoped `## Open questions` section
+- Timestamps with colons or spaces (colons break Windows NTFS)
+- Editing `.state/` by hand — it's plugin-managed session state
+
+## 5. Escalation
+
+If a rule seems wrong or too strict, file an entry in `.open-questions/` with the proposed change and rationale. Do not disable the hook.
+
+---
+
+*This contract derives from [Andrej Karpathy's `llm-wiki.md` gist (2026)](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). See the plugin's [CREDITS.md](https://github.com/anthril/claude-memex/blob/main/CREDITS.md) for full attribution.*

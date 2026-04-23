@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/anthril/claude-memex/main/schemas/memex.config.schema.json",
+  "title": "Memex configuration",
+  "description": "Schema for memex.config.json — the project-owned file that drives every Memex hook.",
+  "type": "object",
+  "required": ["version", "profile", "root"],
+  "properties": {
+    "$schema": { "type": "string", "format": "uri" },
+    "version": {
+      "type": "string",
+      "description": "Schema version. Current: '1'.",
+      "enum": ["1"]
+    },
+    "profile": {
+      "type": "string",
+      "description": "Which profile this project was initialised from.",
+      "examples": ["engineering-ops", "research-wiki", "book-companion", "personal-journal", "generic"]
+    },
+    "pluginVersion": {
+      "type": "string",
+      "description": "Pinned version of the Memex plugin. Optional but recommended."
+    },
+    "root": {
+      "type": "string",
+      "description": "Folder under the project root that holds the wiki. Default: '.memex'.",
+      "default": ".memex"
+    },
+    "allowedTopLevel": {
+      "type": "array",
+      "description": "Names allowed at the top level of the wiki root. Writes outside this list are blocked.",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "datedFolders": {
+      "type": "object",
+      "description": "Folders under the wiki root where children must be dated, e.g. `.audits/DDMMYYYY-HHMM/`.",
+      "properties": {
+        "paths": { "type": "array", "items": { "type": "string" } },
+        "format": { "type": "string", "default": "DDMMYYYY-HHMM" }
+      }
+    },
+    "readmeRequired": {
+      "type": "array",
+      "description": "Patterns under which a new slug folder must begin with README.md. Use glob with `*` for the slug slot, e.g. 'entities/*'.",
+      "items": { "type": "string" }
+    },
+    "frontmatter": {
+      "type": "object",
+      "description": "Frontmatter validation rules.",
+      "properties": {
+        "appliesTo": {
+          "type": "array",
+          "description": "Glob patterns (relative to the wiki root) that require frontmatter.",
+          "items": { "type": "string" }
+        },
+        "required": {
+          "type": "array",
+          "description": "Frontmatter fields that must be present and non-empty.",
+          "items": { "type": "string" }
+        },
+        "enum": {
+          "type": "object",
+          "description": "Optional enum constraints on specific frontmatter fields.",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "naming": {
+      "type": "object",
+      "description": "Naming conventions for folders and files under the wiki root.",
+      "properties": {
+        "asciiOnly": {
+          "type": "boolean",
+          "description": "If true, restrict kebab-case to ASCII [a-z0-9]. If false (default), accept any Unicode lowercase/caseless letter (Ll, Lo categories) — supports Japanese, Greek, Cyrillic, Arabic, etc. Hyphens are always ASCII; extensions are always ASCII for portability.",
+          "default": false
+        },
+        "filePattern": {
+          "type": "string",
+          "description": "Optional override regex for filenames. Default is kebab-case with an optional two-digit prefix."
+        },
+        "folderPattern": {
+          "type": "string",
+          "description": "Optional override regex for folder names. Default is kebab-case."
+        },
+        "exceptions": {
+          "type": "array",
+          "description": "Names that bypass kebab-case enforcement (e.g. README.md, .resolved).",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "codeToDocMapping": {
+      "type": "array",
+      "description": "Rules linking code paths to required wiki pages.",
+      "items": {
+        "type": "object",
+        "required": ["codePattern", "requiresDoc"],
+        "properties": {
+          "codePattern": {
+            "type": "string",
+            "description": "Glob pattern matched against paths relative to the project root. `*` captures a slug; use `{1}`, `{2}` in `requiresDoc` to reference captures."
+          },
+          "requiresDoc": {
+            "type": "string",
+            "description": "Relative doc path under the wiki root. Supports `{1}`-style substitutions from `codePattern` captures. Use ' OR ' between alternatives to accept any one."
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["warn", "block", "warn-then-block"],
+            "default": "warn-then-block"
+          },
+          "stateKey": {
+            "type": "string",
+            "description": "Optional namespace for per-session state tracking (used by warn-then-block)."
+          }
+        }
+      }
+    },
+    "log": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string", "default": "log.md" },
+        "entryPrefix": {
+          "type": "string",
+          "description": "Template for log entry prefix. Placeholders: {date}, {event}, {subject}.",
+          "default": "## [{date}] {event} | {subject}"
+        }
+      }
+    },
+    "index": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string", "default": "index.md" },
+        "sections": {
+          "type": "array",
+          "description": "Top-level headings Memex auto-maintains in index.md.",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "search": {
+      "type": "object",
+      "description": "Search engine config for the UserPromptSubmit retrieval hook.",
+      "properties": {
+        "engine": {
+          "type": "string",
+          "enum": ["grep", "qmd"],
+          "default": "grep"
+        },
+        "maxContextPages": { "type": "integer", "default": 3, "minimum": 0 }
+      }
+    },
+    "updateCheckUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional override for the GitHub Releases API URL polled by the update-check hook. Useful for locked-down corporate environments that mirror GitHub. Defaults to the official repo."
+    },
+    "hookEvents": {
+      "type": "object",
+      "description": "Per-event toggles and tuning parameters for session-lifecycle hooks.",
+      "properties": {
+        "sessionStart": {
+          "type": "object",
+          "properties": {
+            "injectIndex": { "type": "boolean", "default": true },
+            "injectRecentLog": { "type": "integer", "minimum": 0, "default": 5 },
+            "updateCheck": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, poll GitHub for a newer release once every 24h and surface an update notice at session start. Off by default — opt in if you want upgrade notifications."
+            }
+          }
+        },
+        "stop": {
+          "type": "object",
+          "properties": {
+            "appendLog": { "type": "boolean", "default": true },
+            "staleCheck": { "type": "boolean", "default": true }
+          }
+        },
+        "preCompact": {
+          "type": "object",
+          "properties": {
+            "snapshot": { "type": "boolean", "default": true }
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

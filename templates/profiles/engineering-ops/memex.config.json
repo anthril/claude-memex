@@ -1,0 +1,75 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthril/claude-memex/main/schemas/memex.config.schema.json",
+  "version": "1",
+  "profile": "engineering-ops",
+  "root": ".memex",
+
+  "allowedTopLevel": [
+    "README.md",
+    "AGENTS.md",
+    "index.md",
+    "log.md",
+    ".audits",
+    ".research",
+    ".open-questions",
+    ".rules",
+    ".state",
+    "entities",
+    "platform",
+    "workers",
+    "workflows",
+    "agents"
+  ],
+
+  "datedFolders": {
+    "paths": [".audits", ".research"],
+    "format": "DDMMYYYY-HHMM"
+  },
+
+  "readmeRequired": [
+    "entities/*",
+    "platform/features/*",
+    "platform/systems/*",
+    "workers/*",
+    "agents/*",
+    "workflows/*"
+  ],
+
+  "frontmatter": {
+    "appliesTo": ["**/README.md", "**/AGENTS.md"],
+    "required": ["title", "slug", "type", "status", "owner", "created", "updated"],
+    "enum": {
+      "type": ["feature", "system", "entity", "worker", "agent", "workflow", "open-question", "rule"],
+      "status": ["draft", "active", "deprecated"]
+    }
+  },
+
+  "naming": {
+    "exceptions": ["README.md", "AGENTS.md", "CHANGELOG.md", "CONVENTIONS.md", ".resolved"]
+  },
+
+  "codeToDocMapping": [],
+
+  "log": {
+    "path": "log.md",
+    "entryPrefix": "## [{date}] {event} | {subject}"
+  },
+
+  "index": {
+    "path": "index.md",
+    "sections": [
+      "Entities",
+      "Features",
+      "Systems",
+      "Workers",
+      "Workflows",
+      "Open Questions",
+      "Recent Activity"
+    ]
+  },
+
+  "search": {
+    "engine": "grep",
+    "maxContextPages": 3
+  }
+}

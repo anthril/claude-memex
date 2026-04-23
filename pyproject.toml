@@ -1,0 +1,63 @@
+[project]
+name = "claude-memex"
+version = "0.1.0a1"
+description = "Claude Code plugin for LLM-maintained, hook-enforced project wikis."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "ruff>=0.6",
+  "mypy>=1.11",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = [
+  "examples/",
+  "templates/",
+  ".docs/",
+  "llm-wiki.md",
+]
+
+[tool.ruff.lint]
+# E/W: pycodestyle; F: pyflakes; I: isort; UP: pyupgrade; B: bugbear; SIM: simplify
+select = ["E", "W", "F", "I", "UP", "B", "SIM"]
+# E501 handled by formatter; E402 impossible to avoid with sys.path.insert before imports
+ignore = ["E501", "E402"]
+
+[tool.ruff.lint.per-file-ignores]
+# Hook scripts legitimately bootstrap sys.path before local imports:
+"hooks/scripts/*.py" = ["E402"]
+# Tests may use wildcard imports / fixture-heavy patterns:
+"tests/*.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.10"
+# Keep strictness moderate — hook scripts are small stdlib wrappers and
+# imposing --strict would add noise without catching real bugs at this size.
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = false
+no_implicit_optional = true
+check_untyped_defs = true
+exclude = [
+  '^examples/',
+  '^templates/',
+  '^\.docs/',
+  '^tests/fixtures/',
+]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+# Test files use pytest fixture injection that's hard to type without plugins
+ignore_errors = true
