@@ -36,13 +36,14 @@ Memex ships with presets you pick at init time:
 
 | Profile | For | Shape |
 |---|---|---|
-| `engineering-ops` | SaaS / product codebases | `entities/`, `platform/features/`, `platform/systems/`, `workers/`, `workflows/` |
-| `research-wiki` | Multi-source research — closest to Karpathy's original gist | `raw/{articles,papers}/`, `wiki/{entities,concepts,summaries,analyses,syntheses}/` |
+| `engineering-ops` | Working SaaS / product codebases | `planning/{prds,rfcs,decisions}/`, `entities/`, `platform/{features,systems,integrations}/`, `workers/`, `agents/`, `workflows/`, `runbooks/`, `processes/`, `environments/`, `.audits/`, `.incidents/`, `.research/` |
+| `research-wiki` | Multi-source research — closest to Karpathy's original gist | `raw/{articles,papers,books,transcripts,videos,interviews,standards,datasets,notes,assets}/`, `wiki/{entities,concepts,summaries,analyses,syntheses}/` |
+| `research-project` | Research + planning projects that will migrate into development | `raw/*`, `wiki/*`, `research/{hypotheses,literature-review,methodology,experiments,prompts,roadmap.md}`, `architecture/`, `systems/`, `evaluation/` |
 | `book-companion` | Reading a long book with the LLM | `raw/chapters/`, `wiki/{characters,places,themes,plot-threads}/` |
 | `personal-journal` | Self-tracking, reflection | `raw/entries/`, `wiki/{topics,goals,reflections}/` |
 | `generic` | Minimal starting point | `topics/`, `index.md`, `log.md`, `.open-questions/` |
 
-All profiles share: `AGENTS.md`, `index.md`, `log.md`, `.open-questions/`. The rest is profile-specific. You can fork any profile, edit `memex.config.json`, and register your own.
+All profiles share: `AGENTS.md`, `index.md`, `log.md`, `.open-questions/`. The rest is profile-specific. You can fork any profile, edit `memex.config.json`, and register your own — or use `/memex:init-profile` to build a custom profile interactively.
 
 ---
 
@@ -59,7 +60,6 @@ Three things make the wiki stay current instead of rotting:
 - **Unicode-friendly slugs** out of the box — Japanese, Greek, Cyrillic, Arabic, Hebrew, Thai and more. Set `naming.asciiOnly: true` if you want strict ASCII.
 - **Opt-in update notifications** — set `hookEvents.sessionStart.updateCheck: true` to get a notice when a newer plugin release is published.
 - **Optional `qmd` integration** — set `search.engine: "qmd"` for BM25 + vector retrieval; grep fallback is automatic.
-- **Lumioh-to-Memex migration** — `/memex:migrate-from-operations` (tested script) moves a `.operations/` tree to `.memex/` and extracts the matching config.
 
 See [`docs/concepts.md`](docs/concepts.md) for the full model.
 
@@ -123,7 +123,7 @@ claude-memex/
 ├── templates/profiles/            # Seedable profile trees
 ├── templates/shared/              # Generic starter templates
 ├── schemas/memex.config.schema.json
-├── scripts/migrate_from_operations.py
+├── scripts/                          # Ancillary scripts (version checks, etc.)
 ├── docs/                          # Plugin docs
 ├── examples/                      # Demo projects (incl. worked research-wiki demo)
 ├── tests/                         # 227 pytest tests

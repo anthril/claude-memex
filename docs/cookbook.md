@@ -166,9 +166,9 @@ Useful if you commit `.memex/` to a public repo and don't want per-session artef
 
 ---
 
-## Migrate an existing Lumioh-style `.operations/` tree
+## Build a custom profile interactively
 
-Run `/memex:migrate-from-operations`. See the command's docs for the full flow. Dry-run first: `/memex:migrate-from-operations --dry-run`.
+If none of the built-in profiles fits your project's shape, run `/memex:init-profile` inside the project. It surveys the existing folders, asks targeted questions, and generates a custom `memex.config.json` + `.memex/` tree tailored to the project. See [`../skills/profile-builder/SKILL.md`](../skills/profile-builder/SKILL.md) for the workflow and [`../examples/custom-profile-demo/WALKTHROUGH.md`](../examples/custom-profile-demo/WALKTHROUGH.md) for a worked example.
 
 ---
 

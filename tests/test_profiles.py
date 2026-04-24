@@ -10,6 +10,7 @@ from conftest import PROFILES, PROFILES_DIR
 CANONICAL_PATHS = {
     "engineering-ops": ".memex/entities/my-entity/README.md",
     "research-wiki": ".memex/wiki/entities/my-entity/README.md",
+    "research-project": ".memex/wiki/entities/my-entity/README.md",
     "book-companion": ".memex/wiki/characters/my-character/README.md",
     "personal-journal": ".memex/wiki/topics/my-topic/README.md",
     "generic": ".memex/topics/my-topic/README.md",

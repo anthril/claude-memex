@@ -42,6 +42,7 @@ Target folder per profile:
 | Profile | Summary path |
 |---|---|
 | `research-wiki` | `wiki/summaries/<source-slug>.md` |
+| `research-project` | `wiki/summaries/<source-slug>.md` |
 | `engineering-ops` | `.research/<DDMMYYYY-HHMM>/<source-slug>.md` |
 | `book-companion` | `wiki/summaries/<chapter-or-source-slug>.md` |
 | `personal-journal` | `wiki/topics/<derived-topic>/<source-slug>.md` |

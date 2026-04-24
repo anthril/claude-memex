@@ -14,6 +14,9 @@ The documentation system is enforced by hooks shipped in the `memex` Claude Code
 - [.memex/AGENTS.md](.memex/AGENTS.md) — binding contract
 - [.memex/index.md](.memex/index.md) — catalogue of wiki pages
 - [.memex/log.md](.memex/log.md) — chronological ledger
+- [.memex/planning/roadmap.md](.memex/planning/roadmap.md) — rolling roadmap, single source of "what's next"
+- [.memex/runbooks/](.memex/runbooks/) — on-call playbooks
+- [.memex/.incidents/](.memex/.incidents/) — production postmortems
 - [.memex/.open-questions/](.memex/.open-questions/) — unresolved items
 - [memex.config.json](memex.config.json) — schema
 

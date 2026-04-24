@@ -87,7 +87,6 @@ Before you open a PR, make sure:
 - [ ] `mypy` passes (or you've documented why new issues are unavoidable)
 - [ ] Updated `CHANGELOG.md` under `## [Unreleased]`
 - [ ] Updated relevant docs (README, docs/*.md, schema, or profile files)
-- [ ] If your change affects the migration tool, ran `scripts/migrate_from_operations.py --dry-run` against a sample `.operations/` tree manually
 
 ## Reviewing culture
 

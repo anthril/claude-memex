@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """doc-required.py — PreToolUse hook (Write|Edit)
 
-Generalisation of Lumioh's feature-doc-required. Reads `codeToDocMapping` from
-`memex.config.json`. Each mapping entry declares:
+Enforces that code paths declared in `codeToDocMapping` (in `memex.config.json`)
+have a linked wiki page before new code lands. Each mapping entry declares:
 
   - codePattern: a glob-ish path pattern with `*` capture groups, matched
     against paths relative to the project root

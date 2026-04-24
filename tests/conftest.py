@@ -18,7 +18,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parent.parent
 HOOKS_DIR = REPO_ROOT / "hooks" / "scripts"
 PROFILES_DIR = REPO_ROOT / "templates" / "profiles"
-PROFILES = ("engineering-ops", "research-wiki", "book-companion", "personal-journal", "generic")
+PROFILES = ("engineering-ops", "research-wiki", "research-project", "book-companion", "personal-journal", "generic")
 
 # Make `_lib.*` importable by test modules at collection time (before any fixtures run).
 if str(HOOKS_DIR) not in sys.path:
@@ -55,6 +55,11 @@ def engineering_ops_project(tmp_path):
 @pytest.fixture
 def research_wiki_project(tmp_path):
     return _scaffold("research-wiki", tmp_path)
+
+
+@pytest.fixture
+def research_project_project(tmp_path):
+    return _scaffold("research-project", tmp_path)
 
 
 @pytest.fixture

@@ -22,6 +22,13 @@ This profile is the most literal adaptation of [Andrej Karpathy's `llm-wiki.md` 
 |---|---|
 | `raw/articles/` | Web articles (Obsidian Web Clipper output, pasted content) |
 | `raw/papers/` | PDFs, academic papers |
+| `raw/books/` | Book excerpts, chapters, entire books |
+| `raw/transcripts/` | Podcast / talk / lecture / meeting transcripts |
+| `raw/videos/` | Video references (link files, caption extracts) |
+| `raw/interviews/` | User interviews, expert interviews, Q&A transcripts |
+| `raw/standards/` | RFCs, W3C / ISO standards, regulatory documents |
+| `raw/datasets/` | CSV / JSON reference datasets, experimental data |
+| `raw/notes/` | User's own notes, scratch work, field notes |
 | `raw/assets/` | Images, diagrams, supporting binaries |
 | `wiki/entities/<slug>/README.md` | Named things: people, orgs, products, places |
 | `wiki/concepts/<slug>/README.md` | Abstract ideas, frameworks, methodologies |

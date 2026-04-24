@@ -14,7 +14,6 @@ tests/
 ├── test_hooks_session.py        # session-start-context, user-prompt-context, stop-*, precompact, session-end
 ├── test_unicode_paths.py        # kebab-case across Japanese, Greek, Cyrillic, Arabic, Hebrew, Thai, CJK, etc.
 ├── test_update_check.py         # update-check hook + _lib/version SemVer compare
-├── test_migration.py            # scripts/migrate_from_operations.py against a synthetic .operations/ tree
 ├── test_demo_ingest.py          # contract verification for examples/research-wiki-demo/
 ├── test_profiles.py             # every shipped profile scaffolds cleanly and its canonical path is accepted
 ├── test_attribution.py          # Karpathy attribution present where it must be
@@ -22,7 +21,7 @@ tests/
     └── mock_qmd/qmd             # mock qmd binary for qmd-engine tests (generated on-demand by the test)
 ```
 
-Current count: **227 tests**, ~5 seconds on a modern laptop.
+Current count: **~216 tests**, ~5 seconds on a modern laptop.
 
 ## Running
 
@@ -40,7 +39,7 @@ Then:
 pytest                                # all tests
 pytest -v                             # verbose
 pytest tests/test_unicode_paths.py    # one file
-pytest -k migration                   # by keyword
+pytest -k unicode                     # by keyword
 ```
 
 All tests are hermetic — each uses a temporary directory that's cleaned up after the test. No network calls (the update-check test uses a fixture file via `MEMEX_UPDATE_CHECK_JSON`). No state is shared between tests.
@@ -50,7 +49,7 @@ All tests are hermetic — each uses a temporary directory that's cleaned up aft
 The harness covers:
 
 - Every hook script's happy path + at least one failure path
-- Every shipped profile (5 of them) — parametrised across 6 check types
+- Every shipped profile — parametrised across 6 check types
 - The config merging logic (defaults, overrides)
 - Frontmatter parsing / validation (including enum constraints)
 - Path utilities — ASCII and Unicode kebab, dated folders
@@ -58,7 +57,6 @@ The harness covers:
 - Glob-to-regex + substitute helpers in `_lib/patterns.py`
 - qmd integration via a mock binary (`MEMEX_QMD_BIN` env override)
 - Update-check hook — opt-in gating, 24h cache TTL, cache-expiry refetch, graceful failure modes
-- Migration script — dry-run vs execute, config inference from target project shape, refusal conditions
 - Worked ingest demo — every cross-reference resolves, every page is indexed, log has parseable entries
 - SemVer compare edge cases — release beats prerelease, lexicographic prerelease compare
 

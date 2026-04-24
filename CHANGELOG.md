@@ -4,13 +4,25 @@ All notable changes to `claude-memex` are documented here. Format follows [Keep 
 
 ## [Unreleased]
 
-Nothing yet — this section tracks work on `main` between tagged releases.
+### Added
+
+- **`research-project` profile** — for research/planning projects that will migrate into development (e.g. an architecture proposal with literature review, hypotheses, experiments, and planned systems). Superset of `research-wiki` with first-class `research/`, `architecture/`, `systems/`, `evaluation/` surfaces.
+- **`profile-builder` skill + `/memex:init-profile` command** — interactive profile scaffolding for projects whose shape doesn't match any built-in profile. Surveys the project, interviews the user, generates a custom `memex.config.json` + `.memex/` tree. Worked example under `examples/custom-profile-demo/WALKTHROUGH.md`.
+- **`research-wiki` raw classifications** — `raw/` tree expanded from `articles/papers/assets/` to also include `books/`, `transcripts/`, `videos/`, `interviews/`, `standards/`, `datasets/`, `notes/`.
+
+### Changed
+
+- **`engineering-ops` profile expanded** for real-world SaaS projects: adds `planning/{prds,rfcs,decisions}`, `platform/integrations/`, `runbooks/`, `processes/`, `environments/`, `.incidents/`, and `planning/roadmap.md`. Three new rule files: `planning-rules.md`, `incident-rules.md`, `runbook-rules.md`. The `frontmatter.enum.type` enum grows to cover PRD, RFC, ADR, incident, runbook, process, environment, integration.
+
+### Removed
+
+- `/memex:migrate-from-operations` command and backing `scripts/migrate_from_operations.py` — one-shot helper for migrating legacy Lumioh-style `.operations/` trees. No longer relevant; Memex is a standalone plugin.
 
 ---
 
 ## [0.1.0-alpha.1] — 2026-04-23
 
-First public alpha. Full enforcement + session-lifecycle + wiki-operations loop, plus Unicode-friendly slugs, opt-in update notifications, and a tested migration tool for Lumioh-shaped `.operations/` trees.
+First public alpha. Full enforcement + session-lifecycle + wiki-operations loop, plus Unicode-friendly slugs and opt-in update notifications.
 
 ### Plugin core
 
@@ -49,7 +61,7 @@ First public alpha. Full enforcement + session-lifecycle + wiki-operations loop,
 
 ### Slash commands
 
-`/memex:init`, `/memex:ingest`, `/memex:query`, `/memex:lint`, `/memex:log`, `/memex:open-q`, `/memex:promote`, `/memex:graph`, `/memex:migrate-from-operations`.
+`/memex:init`, `/memex:ingest`, `/memex:query`, `/memex:lint`, `/memex:log`, `/memex:open-q`, `/memex:promote`, `/memex:graph`.
 
 ### Profiles
 
@@ -60,10 +72,6 @@ First public alpha. Full enforcement + session-lifecycle + wiki-operations loop,
 - `generic` — minimal starting point
 
 Shared templates (`frontmatter.md.tmpl`, `agents.md.tmpl`, `claude.md.tmpl`) for authoring new profiles.
-
-### Migration
-
-- `scripts/migrate_from_operations.py` — tested one-shot tool for `.operations/` → `.memex/` migration. Detects the Lumioh-shaped tree, infers code-to-doc mappings from the target project (Next.js features, Supabase functions, Supabase migrations), runs dry-run or execute, refuses to overwrite existing `.memex/`.
 
 ### Unicode support
 
@@ -105,9 +113,8 @@ Shared templates (`frontmatter.md.tmpl`, `agents.md.tmpl`, `claude.md.tmpl`) for
 | `test_hooks_session.py` | 13 | session-lifecycle + qmd-engine integration via mock binary |
 | `test_unicode_paths.py` | 41 | Unicode kebab across 11+ writing systems + ASCII-only mode |
 | `test_update_check.py` | 20 | SemVer compare + hook caching / TTL / failure modes |
-| `test_migration.py` | 11 | migration dry-run + execute + config inference + refusal paths |
 | `test_demo_ingest.py` | 35 | contract verification for `examples/research-wiki-demo/` |
-| `test_profiles.py` | 30 | all 5 profiles parametrised across 6 check types |
+| `test_profiles.py` | 30 | profile scaffolds parametrised across 6 check types |
 | `test_attribution.py` | 13 | Karpathy attribution present in every required file |
 | `test_lib.py` | 34 | `_lib/*` unit tests (paths, frontmatter, index parse, patterns, config) |
 
@@ -120,4 +127,3 @@ Inspired directly by Andrej Karpathy's [`llm-wiki.md` gist](https://gist.github.
 ### Known gaps
 
 - **MCP server integration** — reading / writing the wiki from non-Claude clients. Not yet supported; tracked for v0.2.0.
-- **Lumioh dogfood** — the migration tool is tested against synthetic fixtures; a real-world pass against the original Lumioh `.operations/` tree is planned before v0.1.0 final.

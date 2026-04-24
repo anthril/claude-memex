@@ -11,35 +11,65 @@
     "log.md",
     ".audits",
     ".research",
+    ".incidents",
     ".open-questions",
     ".rules",
     ".state",
+    "planning",
     "entities",
     "platform",
     "workers",
+    "agents",
     "workflows",
-    "agents"
+    "runbooks",
+    "processes",
+    "environments"
   ],
 
   "datedFolders": {
-    "paths": [".audits", ".research"],
+    "paths": [".audits", ".research", ".incidents"],
     "format": "DDMMYYYY-HHMM"
   },
 
   "readmeRequired": [
     "entities/*",
+    "planning/prds/*",
+    "planning/rfcs/*",
     "platform/features/*",
     "platform/systems/*",
+    "platform/integrations/*",
     "workers/*",
     "agents/*",
-    "workflows/*"
+    "workflows/*",
+    "runbooks/*",
+    "processes/*",
+    "environments/*"
   ],
 
   "frontmatter": {
     "appliesTo": ["**/README.md", "**/AGENTS.md"],
     "required": ["title", "slug", "type", "status", "owner", "created", "updated"],
     "enum": {
-      "type": ["feature", "system", "entity", "worker", "agent", "workflow", "open-question", "rule"],
+      "type": [
+        "feature",
+        "system",
+        "entity",
+        "worker",
+        "agent",
+        "workflow",
+        "integration",
+        "runbook",
+        "process",
+        "environment",
+        "prd",
+        "rfc",
+        "decision",
+        "incident",
+        "audit",
+        "research",
+        "open-question",
+        "rule"
+      ],
       "status": ["draft", "active", "deprecated"]
     }
   },
@@ -58,11 +88,18 @@
   "index": {
     "path": "index.md",
     "sections": [
+      "Planning",
       "Entities",
       "Features",
       "Systems",
+      "Integrations",
       "Workers",
+      "Agents",
       "Workflows",
+      "Runbooks",
+      "Processes",
+      "Environments",
+      "Incidents",
       "Open Questions",
       "Recent Activity"
     ]

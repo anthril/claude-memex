@@ -14,7 +14,9 @@ Scaffold `.memex/`, `memex.config.json`, and a `CLAUDE.md` reference into the cu
 /memex:init [profile]
 ```
 
-- `profile` (optional, default `generic`) — one of: `engineering-ops`, `research-wiki`, `book-companion`, `personal-journal`, `generic`
+- `profile` (optional, default `generic`) — one of: `engineering-ops`, `research-wiki`, `research-project`, `book-companion`, `personal-journal`, `generic`
+
+If none of the built-in profiles fits, use [`/memex:init-profile`](memex-init-profile.md) — the profile-builder skill surveys your project and generates a tailored custom profile.
 
 ## What the command does
 
@@ -51,8 +53,9 @@ Print a summary:
 
 | Profile | Shape |
 |---|---|
-| `engineering-ops` | `entities/`, `platform/features/`, `platform/systems/`, `workers/`, `workflows/`, `agents/`, `.audits/`, `.research/` |
-| `research-wiki` | `raw/{articles,papers,assets}/`, `wiki/{entities,concepts,summaries,analyses,syntheses}/` |
+| `engineering-ops` | `planning/{prds,rfcs,decisions,roadmap.md}`, `entities/`, `platform/{features,systems,integrations}/`, `workers/`, `agents/`, `workflows/`, `runbooks/`, `processes/`, `environments/`, `.audits/`, `.incidents/`, `.research/` |
+| `research-wiki` | `raw/{articles,papers,books,transcripts,videos,interviews,standards,datasets,notes,assets}/`, `wiki/{entities,concepts,summaries,analyses,syntheses}/` |
+| `research-project` | All of `research-wiki` plus `research/{hypotheses,literature-review,methodology,experiments,prompts,roadmap.md}`, `architecture/`, `systems/`, `evaluation/` |
 | `book-companion` | `raw/chapters/`, `wiki/{characters,places,themes,plot-threads}/`, `timeline.md` |
 | `personal-journal` | `raw/entries/`, `wiki/{topics,goals,reflections}/` |
 | `generic` | `topics/`, `index.md`, `log.md`, `.open-questions/` |

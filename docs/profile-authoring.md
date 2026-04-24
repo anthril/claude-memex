@@ -1,6 +1,12 @@
 # Authoring a profile
 
-Profiles are pure data — a `memex.config.json` + a `.memex/` template tree + a `CLAUDE.md` stub. Memex ships five profiles (`engineering-ops`, `research-wiki`, `book-companion`, `personal-journal`, `generic`). You can add your own.
+Profiles are pure data — a `memex.config.json` + a `.memex/` template tree + a `CLAUDE.md` stub. Memex ships six profiles (`engineering-ops`, `research-wiki`, `research-project`, `book-companion`, `personal-journal`, `generic`). You can add your own.
+
+## Interactive path: `/memex:init-profile`
+
+Before hand-authoring, consider running [`/memex:init-profile`](../commands/memex-init-profile.md) inside the target project. The [profile-builder skill](../skills/profile-builder/SKILL.md) surveys the project's existing folders, interviews you, and generates a tailored `memex.config.json` + `.memex/` tree in one session. See [`examples/custom-profile-demo/WALKTHROUGH.md`](../examples/custom-profile-demo/WALKTHROUGH.md) for a worked example.
+
+The hand-authoring guide below is the right path if you want to contribute a reusable profile upstream (so others can pick it at `/memex:init <slug>` time).
 
 ## Anatomy of a profile
 

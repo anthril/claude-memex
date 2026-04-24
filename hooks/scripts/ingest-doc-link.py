@@ -4,11 +4,9 @@
 Enforces that "ingestible" artifacts (declared in `codeToDocMapping` with
 `severity: block` and typically a distinct file type like .sql migrations)
 either:
-  (a) carry a header comment referencing a doc under the ops root, e.g.
+  (a) carry a header comment referencing a doc under the wiki root, e.g.
       `-- Doc: .memex/platform/systems/users/README.md`, OR
-  (b) have their slug / filename referenced somewhere in the ops root
-
-Ported from Lumioh's migration-doc-link, generalised through the config.
+  (b) have their slug / filename referenced somewhere in the wiki root.
 """
 from __future__ import annotations
 

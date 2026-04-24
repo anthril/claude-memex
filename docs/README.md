@@ -11,7 +11,7 @@ This folder documents the plugin itself.
 | [concepts.md](concepts.md) | Terminology, architecture, prior art, the three-layer model (raw / wiki / schema) |
 | [hook-catalog.md](hook-catalog.md) | Every hook Memex ships, when it fires, what it enforces, how it fails |
 | [profile-authoring.md](profile-authoring.md) | How to write a new profile (scaffolded template tree + `memex.config.json`) |
-| [cookbook.md](cookbook.md) | Recipes: adding a custom folder, disabling a hook, extending the schema, migrating from Lumioh `.operations/` |
+| [cookbook.md](cookbook.md) | Recipes: adding a custom folder, disabling a hook, extending the schema, building a custom profile |
 
 See also: [`../CONTRIBUTING.md`](../CONTRIBUTING.md) for development setup and coding conventions; [`../SECURITY.md`](../SECURITY.md) for the security policy; [`../CHANGELOG.md`](../CHANGELOG.md) for release notes.
 
@@ -31,7 +31,7 @@ Slash commands shipped by the plugin. All are namespaced under `/memex:`.
 | `/memex:open-q` | `/memex:open-q <title>` | Files a new open question under `.memex/.open-questions/` with the profile's template. |
 | `/memex:promote` | `/memex:promote <doc-path> <type>` | Promotes a `.research/` or `raw/` snippet to a permanent entity / concept / feature page. |
 | `/memex:graph` | `/memex:graph [--format mermaid\|dot]` | Emits a link graph. Feeds the "is this orphaned?" view. |
-| `/memex:migrate-from-operations` | `/memex:migrate-from-operations [--dry-run]` | One-shot helper: rewrites `.operations/` → `.memex/` and extracts matching `memex.config.json`. `--dry-run` previews without changing anything. Backed by `scripts/migrate_from_operations.py` (tested). |
+| `/memex:init-profile` | `/memex:init-profile [base-profile]` | Interactive: surveys the project, interviews the user, and generates a custom profile tailored to the actual folder shape. Use when none of the built-in profiles fit cleanly. |
 
 ---
 
@@ -46,6 +46,7 @@ Skills are **auto-invoked** by Claude when the conversation context matches thei
 | `wiki-lint` | "lint the wiki", "audit my docs", "health-check the wiki" |
 | `open-questions-triage` | "triage open questions", "what's blocking me" |
 | `doc-refactor` | "split this page", "merge these", "rename this slug" |
+| `profile-builder` | "/memex:init-profile", "help me build a profile", "none of the profiles fit" |
 
 ---
 

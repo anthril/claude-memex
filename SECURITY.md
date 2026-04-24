@@ -53,7 +53,7 @@ We aim to:
 In scope:
 
 - The plugin's hook scripts under `hooks/scripts/`
-- The migration script `scripts/migrate_from_operations.py`
+- Ancillary scripts under `scripts/`
 - The Python helper library `hooks/scripts/_lib/`
 - The schemas + template tree shipped with the plugin
 

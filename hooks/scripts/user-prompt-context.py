@@ -37,6 +37,10 @@ STOPWORDS = {
     "do", "does", "did", "have", "has", "had", "i", "you", "we", "they",
     "it", "this", "that", "these", "those", "my", "your", "our", "their",
     "can", "could", "should", "would", "will", "from", "into", "about",
+    # Question-word fillers — shouldn't drive retrieval scoring
+    "what", "which", "who", "whom", "whose", "where", "when", "why", "how",
+    "say", "says", "said", "tell", "tells", "told", "mean", "means",
+    "there", "here",
 }
 
 WORD_RE = re.compile(r"[a-z0-9][a-z0-9\-]{2,}")
