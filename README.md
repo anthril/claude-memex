@@ -166,7 +166,7 @@ Community norms are set out in [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## Prior art
 
-- Andrej Karpathy, [`llm-wiki.md` gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) (2026) — the conceptual origin.
+- Andrej Karpathy, [`llm-wiki.md`](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) (2026) — the conceptual origin.
 - Vannevar Bush, ["As We May Think"](https://www.theatlantic.com/magazine/archive/1945/07/as-we-may-think/303881/) (1945) — the Memex essay the name nods to.
 - Anthropic's [`claude-md-management`](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/claude-md-management) plugin — complementary doc-audit tooling for `CLAUDE.md`.
 
