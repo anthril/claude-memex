@@ -4,13 +4,11 @@
   "description": "A Claude-maintained wiki for any project. Hook-enforced doc discipline; LLM-owned knowledge base; ingest/query/lint loop. Inspired by Karpathy's llm-wiki gist.",
   "author": {
     "name": "Anthril",
+    "email": "john@anthril.com",
     "url": "https://github.com/anthril"
   },
   "homepage": "https://github.com/anthril/claude-memex",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/anthril/claude-memex.git"
-  },
+  "repository": "https://github.com/anthril/claude-memex.git",
   "license": "MIT",
   "keywords": [
     "documentation",
@@ -20,9 +18,5 @@
     "memex",
     "llm-wiki",
     "doc-enforcement"
-  ],
-  "commands": "./commands",
-  "agents": "./agents",
-  "skills": "./skills",
-  "hooks": "./hooks/hooks.json"
+  ]
 }
