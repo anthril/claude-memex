@@ -25,7 +25,7 @@ Full attribution in [CREDITS.md](CREDITS.md).
 
 Memex ships as a **hybrid**:
 
-1. **A Claude Code plugin.** Install it with `/plugin install claude-memex` (or point at the repo directly) and you get a set of slash commands, skills, subagents, and hook scripts.
+1. **A Claude Code plugin.** Install it by adding this repo as a marketplace and installing the `memex` plugin — see [Quick start](#quick-start) below. Alternatively, install from the [`anthril-claude-plugins`](https://github.com/anthril/official-claude-plugins) marketplace, which lists `memex` alongside other Anthril plugins. Either path gives you a set of slash commands, skills, subagents, and hook scripts.
 2. **A seedable template.** Run `/memex:init [profile]` inside any project and Memex scaffolds a `.memex/` tree, a matching `memex.config.json`, and the `CLAUDE.md` / `AGENTS.md` wiring to make the hooks active.
 
 The plugin version-controls the **behaviour** (hook scripts, skills, profiles). Your project owns only its `.memex/` tree and its config. When a hook logic bug is fixed upstream, every project using Memex gets the fix by updating the plugin.
@@ -68,8 +68,15 @@ See [`docs/concepts.md`](docs/concepts.md) for the full model.
 ## Quick start
 
 ```bash
-# Install the plugin (once)
-/plugin install claude-memex
+# Install the plugin (once) — two equivalent paths:
+
+# Option A: from this repo as its own marketplace
+/plugin marketplace add anthril/claude-memex
+/plugin install memex@claude-memex
+
+# Option B: from the Anthril official plugin marketplace
+/plugin marketplace add anthril/official-claude-plugins
+/plugin install memex@anthril-claude-plugins
 
 # Scaffold a project
 cd my-project
