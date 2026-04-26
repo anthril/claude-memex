@@ -4,6 +4,18 @@ All notable changes to `claude-memex` are documented here. Format follows [Keep 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.7] — 2026-04-27
+
+### Fixed
+
+- **Pages without frontmatter still showed duplicate H1s.** The previous duplicate-title strip only matched when `frontmatter.title` was set; pages that relied on the body's first H1 to define their title still rendered it twice (once as the chrome `<h1>{{ page.title }}</h1>`, once in the body). Stripping is now unconditional — the body's leading H1 is always removed and its text becomes the title fallback when frontmatter has none.
+- **Folder-index pages reported false-positive broken links to siblings.** When a URL like `/foo/bar/` was served from `<wiki>/foo/bar/index.md`, the page route was passing the URL slug (`foo/bar`) to the renderer rather than the file's canonical slug (`foo/bar/index`). The renderer's `source_dir = source_slug.rsplit("/", 1)[0]` then resolved to `foo` instead of `foo/bar`, so every relative link in `index.md` was searched one folder too high. Now passes the canonical file slug.
+- **Wikilinks to sibling pages were marked broken.** `[[criterion-1-local-learning]]` from a page at `architecture/.../stage-1-experiments/index.md` only tried the absolute root slug. Now cascades: absolute → sibling-relative → ancestor walk, matching the Obsidian-style convention most users expect. Absolute matches still win when both exist (preserves the existing "every slug is unique" contract).
+
+### Tests
+
+- Updated `test_renderer_basic_round_trip` for the unconditional-strip behaviour. New tests for: H1 strip with differing frontmatter title; H1 promotion to title when no frontmatter; sibling wikilink fallback; ancestor-walk wikilink fallback; absolute wikilink precedence; folder-index relative-link route regression.
+
 ## [0.1.0-alpha.6] — 2026-04-27
 
 ### Fixed

@@ -84,12 +84,22 @@ def test_resolver_relative_link_resolution(tmp_path: Path):
 
 
 def test_renderer_basic_round_trip(tmp_path: Path):
-    (tmp_path / "page.md").write_text("# Hello\n\nSome text.\n")
-    rendered = renderer.render("# Hello\n\nSome text.\n", "page", tmp_path)
+    """Basic title + body extraction. The leading body H1 is promoted to
+    `title` and stripped from the rendered body (page template owns the
+    chrome H1) — body markdown like the trailing `## Subhead` is preserved."""
+    (tmp_path / "page.md").write_text(
+        "# Hello\n\nSome text.\n\n## Subhead\n\nMore.\n"
+    )
+    rendered = renderer.render(
+        "# Hello\n\nSome text.\n\n## Subhead\n\nMore.\n", "page", tmp_path
+    )
     assert rendered.title == "Hello"
-    assert "<h1" in rendered.html and "Hello" in rendered.html
+    assert "<h1" not in rendered.html  # leading H1 stripped
     assert "<p>Some text." in rendered.html
-    assert rendered.headings == [(1, "hello", "Hello")]
+    assert "<h2" in rendered.html  # subheadings preserved
+    # The leading H1 is consumed before mistune sees it, so it doesn't
+    # appear in the captured headings list — only deeper headings remain.
+    assert rendered.headings == [(2, "subhead", "Subhead")]
 
 
 def test_renderer_wikilink_and_relative_link(tmp_path: Path):
@@ -129,29 +139,26 @@ def test_renderer_strips_body_h1_matching_frontmatter_title():
     assert rendered.title == "AURORA"
 
 
-def test_renderer_keeps_body_h1_when_it_differs_from_title():
-    """If the body's first H1 differs from the frontmatter title (e.g. an
-    abbreviation expansion or a different framing), keep both — the
-    duplicate-title strip is opt-in to exact matches only."""
+def test_renderer_strips_body_h1_even_when_it_differs_from_frontmatter_title():
+    """Stripping is unconditional — the page template always renders the
+    title as a chrome <h1>, so any body-leading H1 below it would visually
+    duplicate. Frontmatter title wins as the page title; body H1 is
+    discarded for chrome purposes (its text becomes the URL anchor target
+    via the heading-id tracker, but it's not re-rendered as a body <h1>)."""
     src = "---\ntitle: Anthropic\n---\n\n# Anthropic, the company\n\nBody.\n"
     rendered = renderer.render(src, "x", Path("/tmp"))
-    assert "<h1" in rendered.html
-    assert "Anthropic, the company" in rendered.html
+    assert "<h1" not in rendered.html
+    assert rendered.title == "Anthropic"  # frontmatter wins
 
 
-def test_renderer_keeps_body_h1_when_no_frontmatter_title():
-    """No frontmatter title → no duplicate to strip; the body H1 stays."""
+def test_renderer_promotes_body_h1_to_title_when_no_frontmatter():
+    """No frontmatter title → the body's first H1 becomes the title and is
+    stripped from the body (avoiding the chrome+body duplicate)."""
     src = "# Standalone Page\n\nBody.\n"
     rendered = renderer.render(src, "x", Path("/tmp"))
-    assert "<h1" in rendered.html
-    assert "Standalone Page" in rendered.html
-
-
-def test_renderer_strip_is_case_insensitive():
-    """Match is case-insensitive — `# aurora` strips against `title: AURORA`."""
-    src = "---\ntitle: AURORA\n---\n\n# aurora\n\nBody.\n"
-    rendered = renderer.render(src, "x", Path("/tmp"))
+    assert rendered.title == "Standalone Page"
     assert "<h1" not in rendered.html
+    assert "Body." in rendered.html
 
 
 def test_renderer_resolves_asset_links_when_file_exists(tmp_path: Path):
@@ -201,3 +208,41 @@ def test_renderer_keeps_marking_truly_missing_assets_broken(tmp_path: Path):
     src = "Link to [missing](../schemas/does-not-exist.json)."
     rendered = renderer.render(src, "spec/page", tmp_path)
     assert "../schemas/does-not-exist.json" in rendered.broken_links
+
+
+def test_wikilink_resolves_against_sibling_when_absolute_misses(tmp_path: Path):
+    """`[[criterion-1-local-learning]]` from a page at
+    `<wiki>/sec/exp/index.md` should resolve to the sibling
+    `<wiki>/sec/exp/criterion-1-local-learning.md`, not be marked broken
+    just because there's no top-level page with that slug. Mirrors the
+    Obsidian-style behaviour most users expect."""
+    (tmp_path / "sec" / "exp").mkdir(parents=True)
+    (tmp_path / "sec" / "exp" / "criterion-1-local-learning.md").write_text("# C1")
+    src = "See [[criterion-1-local-learning]] for details."
+    rendered = renderer.render(src, "sec/exp/index", tmp_path)
+    assert rendered.broken_links == []
+    assert 'href="/sec/exp/criterion-1-local-learning"' in rendered.html
+
+
+def test_wikilink_walks_ancestors_for_shared_pages(tmp_path: Path):
+    """A wikilink to a page that lives higher in the tree (e.g. a shared
+    helper at the wiki root) should still resolve."""
+    (tmp_path / "shared-helper.md").write_text("# Shared")
+    (tmp_path / "deep" / "nested" / "spot").mkdir(parents=True)
+    (tmp_path / "deep" / "nested" / "spot" / "page.md").write_text("body")
+    src = "See [[shared-helper]]."
+    rendered = renderer.render(src, "deep/nested/spot/page", tmp_path)
+    assert rendered.broken_links == []
+    assert 'href="/shared-helper"' in rendered.html
+
+
+def test_wikilink_absolute_match_still_wins(tmp_path: Path):
+    """If both an absolute match and a sibling exist, the absolute (root)
+    match wins — preserves the existing wiki-style "every slug is unique"
+    contract for projects that rely on it."""
+    (tmp_path / "concept.md").write_text("# Top")
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "concept.md").write_text("# Sub")
+    src = "[[concept]]"
+    rendered = renderer.render(src, "sub/page", tmp_path)
+    assert 'href="/concept"' in rendered.html  # root, not sub/concept

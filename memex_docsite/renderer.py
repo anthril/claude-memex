@@ -91,17 +91,50 @@ class _DocsiteRenderer(mistune.HTMLRenderer):
 
 
 def _expand_wikilinks(markdown: str, source_slug: str, wiki_root: Path, broken: list[str]) -> str:
-    """Convert `[[slug]]` and `[[slug|display]]` to standard `[display](url)`."""
+    """Convert `[[slug]]` and `[[slug|display]]` to standard `[display](url)`.
+
+    Resolution cascade for the target slug:
+      1. Absolute lookup — `slug_to_path(target, wiki_root)`. Behaves like
+         a wiki where every page has a unique slug from the wiki root.
+      2. Sibling-relative — `slug_to_path("<source-dir>/<target>", wiki_root)`.
+         Lets a page at `architecture/foo/index.md` write
+         `[[criterion-1-local-learning]]` and have it resolve to a sibling
+         file at `architecture/foo/criterion-1-local-learning.md`. This is
+         the convention most users actually expect (Obsidian-style), and
+         matches how `resolve_relative` already works for markdown links.
+      3. Ancestor walk — try each ancestor folder of the source page in
+         turn. Lets `[[shared-helper]]` from a deeply-nested page resolve
+         to a `shared-helper.md` higher in the tree.
+    """
+
+    source_dir = source_slug.rsplit("/", 1)[0] if "/" in source_slug else ""
+
+    def _resolve_target(target_slug: str) -> str | None:
+        # 1. Absolute.
+        if resolver.slug_to_path(target_slug, wiki_root) is not None:
+            return target_slug
+        # 2. Sibling.
+        if source_dir:
+            candidate = f"{source_dir}/{target_slug}"
+            if resolver.slug_to_path(candidate, wiki_root) is not None:
+                return candidate
+            # 3. Ancestor walk.
+            parts = source_dir.split("/")
+            for depth in range(len(parts) - 1, 0, -1):
+                candidate = f"{'/'.join(parts[:depth])}/{target_slug}"
+                if resolver.slug_to_path(candidate, wiki_root) is not None:
+                    return candidate
+        return None
 
     def replace(match: re.Match[str]) -> str:
         target_slug = match.group(1).strip()
         fragment = match.group(2)
         display = match.group(3) or target_slug
-        path = resolver.slug_to_path(target_slug, wiki_root)
-        if path is None:
+        resolved_slug = _resolve_target(target_slug)
+        if resolved_slug is None:
             broken.append(target_slug)
             return f'<a class="memex-broken" href="#" title="broken wikilink">{display}</a>'
-        url = resolver.slug_to_url(target_slug)
+        url = resolver.slug_to_url(resolved_slug)
         if fragment:
             url = f"{url}#{fragment}"
         return f"[{display}]({url})"
@@ -112,25 +145,23 @@ def _expand_wikilinks(markdown: str, source_slug: str, wiki_root: Path, broken: 
 _LEADING_H1_RE = re.compile(r"\A\s*#\s+([^\n]+?)\s*\n", re.MULTILINE)
 
 
-def _strip_leading_title_h1(body: str, fm_title: str | None) -> str:
-    """If the body's first heading is a level-1 ATX heading whose text matches
-    the frontmatter title, remove it. Avoids the duplicate-title rendering
-    where `# AURORA` in the body shows up under a `<h1>{{ page.title }}</h1>`
-    chrome that already exists in the page template.
+def _strip_leading_h1(body: str) -> tuple[str, str | None]:
+    """Strip the body's leading ATX H1 and return `(stripped_body, h1_text)`.
 
-    Conservative: only strips when frontmatter explicitly sets `title:` AND
-    the body's first non-blank construct is an ATX H1. Setext H1s (===) and
-    pages whose body H1 differs from the frontmatter title are left alone.
+    The page template always renders the page title as a chrome `<h1>`, so
+    repeating the body's leading H1 below it produces an unsightly
+    duplicate. We strip the body H1 unconditionally and promote its text
+    into the title fallback chain in `render()` — pages without a
+    frontmatter `title:` then still get a sensible page title from the
+    body's first heading without rendering it twice.
+
+    Setext H1s (using `===`) are intentionally left alone — they're rare
+    enough in practice to not be worth the parser complexity.
     """
-    if not fm_title:
-        return body
     match = _LEADING_H1_RE.match(body)
     if not match:
-        return body
-    body_h1_text = match.group(1).strip()
-    if body_h1_text.casefold() == str(fm_title).strip().casefold():
-        return body[match.end() :]
-    return body
+        return body, None
+    return body[match.end() :], match.group(1).strip()
 
 
 def render(content: str, source_slug: str, wiki_root: Path) -> RenderedPage:
@@ -140,8 +171,7 @@ def render(content: str, source_slug: str, wiki_root: Path) -> RenderedPage:
     broken: list[str] = []
     headings: list[tuple[int, str, str]] = []
 
-    fm_title = fm.get("title")
-    body = _strip_leading_title_h1(body, fm_title if isinstance(fm_title, str) else None)
+    body, leading_h1 = _strip_leading_h1(body)
     body = _expand_wikilinks(body, source_slug, wiki_root, broken)
 
     md = mistune.create_markdown(
@@ -157,6 +187,7 @@ def render(content: str, source_slug: str, wiki_root: Path) -> RenderedPage:
 
     title = (
         fm.get("title")
+        or leading_h1
         or (headings[0][2] if headings else None)
         or source_slug.rsplit("/", 1)[-1].replace("-", " ").title()
     )

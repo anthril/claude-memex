@@ -302,7 +302,13 @@ def _page_response(
         raise HTTPException(404)
 
     content = file_path.read_text(encoding="utf-8", errors="replace")
-    page = renderer.render(content, slug, cfg.wiki_root)
+    # Pass the *canonical* slug derived from the actual file, not the URL
+    # slug. For a URL like `/foo/bar/` the URL slug is `foo/bar` but the
+    # file is `<wiki>/foo/bar/index.md` (or README.md) — the renderer
+    # needs the file-level slug so its `source_dir` is the page's true
+    # directory and relative-link resolution lands inside that folder.
+    canonical_slug = resolver.path_to_slug(file_path, cfg.wiki_root)
+    page = renderer.render(content, canonical_slug, cfg.wiki_root)
     backlinks = (
         [
             {"slug": n.slug, "title": n.title, "url": resolver.slug_to_url(n.slug)}

@@ -144,3 +144,26 @@ def test_page_route_404s_for_missing_asset(research_wiki_project: Path):
     with _client(research_wiki_project) as client:
         r = client.get("/schemas/does-not-exist.json")
         assert r.status_code == 404
+
+
+def test_folder_index_pages_resolve_relative_links_to_siblings(
+    research_wiki_project: Path,
+):
+    """Regression — when a URL like `/foo/bar/` is served from
+    `<wiki>/foo/bar/index.md`, relative links in that file
+    (`[Sib](sibling)`) must resolve to `<wiki>/foo/bar/sibling.md`, not
+    one level higher. The page route now passes the canonical file slug
+    to the renderer (e.g. `foo/bar/index`) so `source_dir` lands inside
+    the folder, not at its parent."""
+    folder = research_wiki_project / ".memex" / "section-x"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "index.md").write_text(
+        "# Section X\n\nSee [criterion 1](criterion-one) for details.\n"
+    )
+    (folder / "criterion-one.md").write_text("# Criterion 1\n\nbody\n")
+    with _client(research_wiki_project) as client:
+        r = client.get("/section-x/")
+        assert r.status_code == 200
+        assert "broken-links" not in r.text
+        # The link should resolve to the sibling under the same folder.
+        assert 'href="/section-x/criterion-one"' in r.text
