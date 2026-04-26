@@ -109,6 +109,30 @@ def _expand_wikilinks(markdown: str, source_slug: str, wiki_root: Path, broken: 
     return WIKILINK_RE.sub(replace, markdown)
 
 
+_LEADING_H1_RE = re.compile(r"\A\s*#\s+([^\n]+?)\s*\n", re.MULTILINE)
+
+
+def _strip_leading_title_h1(body: str, fm_title: str | None) -> str:
+    """If the body's first heading is a level-1 ATX heading whose text matches
+    the frontmatter title, remove it. Avoids the duplicate-title rendering
+    where `# AURORA` in the body shows up under a `<h1>{{ page.title }}</h1>`
+    chrome that already exists in the page template.
+
+    Conservative: only strips when frontmatter explicitly sets `title:` AND
+    the body's first non-blank construct is an ATX H1. Setext H1s (===) and
+    pages whose body H1 differs from the frontmatter title are left alone.
+    """
+    if not fm_title:
+        return body
+    match = _LEADING_H1_RE.match(body)
+    if not match:
+        return body
+    body_h1_text = match.group(1).strip()
+    if body_h1_text.casefold() == str(fm_title).strip().casefold():
+        return body[match.end() :]
+    return body
+
+
 def render(content: str, source_slug: str, wiki_root: Path) -> RenderedPage:
     """Render markdown to a RenderedPage."""
     fm, body = frontmatter.split(content)
@@ -116,6 +140,8 @@ def render(content: str, source_slug: str, wiki_root: Path) -> RenderedPage:
     broken: list[str] = []
     headings: list[tuple[int, str, str]] = []
 
+    fm_title = fm.get("title")
+    body = _strip_leading_title_h1(body, fm_title if isinstance(fm_title, str) else None)
     body = _expand_wikilinks(body, source_slug, wiki_root, broken)
 
     md = mistune.create_markdown(

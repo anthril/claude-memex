@@ -253,7 +253,7 @@ def _shared_context(
             if s.slug in _SHORTCUT_SECTION_SLUGS:
                 continue
             section_summaries.append(
-                {"label": s.label, "slug": s.slug, "count": s.count}
+                {"label": s.label, "slug": s.slug, "count": s.count, "kind": s.kind}
             )
     return {
         "site_title": cfg.title,

@@ -4,6 +4,20 @@ All notable changes to `claude-memex` are documented here. Format follows [Keep 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.5] — 2026-04-26
+
+### Fixed
+
+- **Duplicate page titles.** Pages whose markdown body started with a `# Title` matching the frontmatter `title:` rendered two H1s — the chrome-rendered `<h1>{{ page.title }}</h1>` plus the body's own. The renderer now strips the body's leading H1 when its plain text matches the frontmatter title (case-insensitive). H1s that differ from the title are left alone, and pages without frontmatter title keep their body H1 as before.
+
+### Added
+
+- **Sidebar sections grouped by origin.** The Sections nav now splits into three labelled groups: **Wiki** (curated content — sections that map to a `frontmatter.enum.type` value), **Project** (authored content — sections matched only by folder convention), and an unlabelled **meta** group at the bottom for Recent Activity / Uncategorised. The grouping is automatic via a new `Section.kind` property; no config change required. Lets users at a glance see where Claude is meant to write versus where they author content directly.
+
+### Tests
+
+- 4 renderer tests (matching strip / case-insensitive / non-match preserved / no-frontmatter case) and 1 sections test (kind classification).
+
 ## [0.1.0-alpha.4] — 2026-04-26
 
 ### Fixed

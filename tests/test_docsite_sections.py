@@ -254,6 +254,30 @@ def test_folder_fallback_skips_dot_segments(research_wiki_project: Path):
     assert [n.slug for n in by_slug["wiki"].pages] == [".memex/wiki/entities/x"]
 
 
+def test_section_kind_classification(research_wiki_project: Path):
+    """Sections are classified into three kinds for sidebar grouping:
+    curated (mapped to a frontmatter.type), authored (folder-only), or
+    meta (Recent Activity / Uncategorised).
+    """
+    cfg_path = research_wiki_project / "memex.config.json"
+    raw = json.loads(cfg_path.read_text())
+    raw["index"]["sections"] = [
+        "Entities",         # mapped to type "entity" → curated
+        "Architecture",     # no type match → authored
+        "Recent Activity",  # virtual → meta
+    ]
+    cfg_path.write_text(json.dumps(raw))
+    cfg = cfg_mod.load(start=research_wiki_project)
+    graph = Graph(nodes=[Node(slug="x", title="X", type="entity")])
+    sections = sections_mod.build_sections(cfg, graph)
+    by_slug = {s.slug: s for s in sections}
+    assert by_slug["entities"].kind == "curated"
+    assert by_slug["architecture"].kind == "authored"
+    assert by_slug["recent-activity"].kind == "meta"
+    # Synthetic auto-appended (rule from enum) is curated (has type_values).
+    assert by_slug["rule"].kind == "curated"
+
+
 def test_synthetic_sections_marked(research_wiki_project: Path):
     """Auto-appended (uncovered enum) and Uncategorised sections carry an
     `is_synthetic` flag so the sidebar can elide them when empty."""

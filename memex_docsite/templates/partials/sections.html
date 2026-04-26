@@ -2,16 +2,61 @@
   <div class="sidebar-section-header">
     <a href="/sections">Sections</a>
   </div>
-  <ul>
-    {% for s in nav_sections %}
-      <li>
-        <a href="/sections/{{ s.slug }}">
-          {{ s.label }}
-          {% if s.count %}
-            <span class="shortcut-count" aria-label="{{ s.count }} pages">{{ s.count }}</span>
-          {% endif %}
-        </a>
-      </li>
-    {% endfor %}
-  </ul>
+
+  {% set curated = nav_sections | selectattr("kind", "equalto", "curated") | list %}
+  {% set authored = nav_sections | selectattr("kind", "equalto", "authored") | list %}
+  {% set meta = nav_sections | selectattr("kind", "equalto", "meta") | list %}
+
+  {% if curated %}
+    <div class="sidebar-section-group" data-group="curated">
+      <div class="sidebar-section-grouplabel">Wiki <span class="page-meta">curated</span></div>
+      <ul>
+        {% for s in curated %}
+          <li>
+            <a href="/sections/{{ s.slug }}">
+              {{ s.label }}
+              {% if s.count %}
+                <span class="shortcut-count" aria-label="{{ s.count }} pages">{{ s.count }}</span>
+              {% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if authored %}
+    <div class="sidebar-section-group" data-group="authored">
+      <div class="sidebar-section-grouplabel">Project <span class="page-meta">authored</span></div>
+      <ul>
+        {% for s in authored %}
+          <li>
+            <a href="/sections/{{ s.slug }}">
+              {{ s.label }}
+              {% if s.count %}
+                <span class="shortcut-count" aria-label="{{ s.count }} pages">{{ s.count }}</span>
+              {% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if meta %}
+    <div class="sidebar-section-group" data-group="meta">
+      <ul>
+        {% for s in meta %}
+          <li>
+            <a href="/sections/{{ s.slug }}">
+              {{ s.label }}
+              {% if s.count %}
+                <span class="shortcut-count" aria-label="{{ s.count }} pages">{{ s.count }}</span>
+              {% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
 </nav>

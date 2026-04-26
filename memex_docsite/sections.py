@@ -55,6 +55,11 @@ _PLURAL_OVERRIDES: dict[str, str | None] = {
 }
 
 
+# Section slugs that should always render as "meta" (their own group at the
+# bottom of the sidebar, separated from curated + authored content).
+_META_SLUGS = frozenset({"recent-activity", "uncategorised"})
+
+
 @dataclass(slots=True)
 class Section:
     slug: str
@@ -71,6 +76,24 @@ class Section:
     def is_virtual(self) -> bool:
         """True for sections with no underlying type (e.g. Recent Activity)."""
         return not self.type_values
+
+    @property
+    def kind(self) -> str:
+        """Classify the section for sidebar grouping.
+
+        - "curated" — maps to a `frontmatter.enum.type` value, so its pages
+          are LLM-curated wiki content (entities, concepts, summaries…).
+        - "authored" — folder-only match, so its pages are first-party
+          content the human / Claude write directly (architecture, research,
+          data, etc.).
+        - "meta"     — virtual / catch-all sections (Recent Activity,
+          Uncategorised). Rendered separately at the bottom of the nav.
+        """
+        if self.slug in _META_SLUGS:
+            return "meta"
+        if self.type_values:
+            return "curated"
+        return "authored"
 
 
 # Slugs whose pages come from `frontmatter.updated` desc, not from a type.

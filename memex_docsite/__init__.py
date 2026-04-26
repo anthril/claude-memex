@@ -12,4 +12,4 @@ future-flag would bind the name `annotations` in this namespace to a
 """
 
 __all__ = ["__version__"]
-__version__ = "0.1.0a4"
+__version__ = "0.1.0a5"

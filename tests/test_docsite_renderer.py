@@ -114,3 +114,41 @@ def test_renderer_uses_frontmatter_title():
     rendered = renderer.render(src, "x", Path("/tmp"))
     assert rendered.title == "Custom Title"
     assert rendered.frontmatter["title"] == "Custom Title"
+
+
+def test_renderer_strips_body_h1_matching_frontmatter_title():
+    """When the frontmatter `title` and the body's first H1 are the same,
+    the body H1 is stripped — the page template already renders the title
+    as `<h1>{{ page.title }}</h1>` and we don't want the duplicate.
+    """
+    src = "---\ntitle: AURORA\n---\n\n# AURORA\n\nBody copy here.\n"
+    rendered = renderer.render(src, "x", Path("/tmp"))
+    # Body H1 removed; the only "AURORA" reference is the frontmatter title.
+    assert "<h1" not in rendered.html
+    assert "Body copy here." in rendered.html
+    assert rendered.title == "AURORA"
+
+
+def test_renderer_keeps_body_h1_when_it_differs_from_title():
+    """If the body's first H1 differs from the frontmatter title (e.g. an
+    abbreviation expansion or a different framing), keep both — the
+    duplicate-title strip is opt-in to exact matches only."""
+    src = "---\ntitle: Anthropic\n---\n\n# Anthropic, the company\n\nBody.\n"
+    rendered = renderer.render(src, "x", Path("/tmp"))
+    assert "<h1" in rendered.html
+    assert "Anthropic, the company" in rendered.html
+
+
+def test_renderer_keeps_body_h1_when_no_frontmatter_title():
+    """No frontmatter title → no duplicate to strip; the body H1 stays."""
+    src = "# Standalone Page\n\nBody.\n"
+    rendered = renderer.render(src, "x", Path("/tmp"))
+    assert "<h1" in rendered.html
+    assert "Standalone Page" in rendered.html
+
+
+def test_renderer_strip_is_case_insensitive():
+    """Match is case-insensitive — `# aurora` strips against `title: AURORA`."""
+    src = "---\ntitle: AURORA\n---\n\n# aurora\n\nBody.\n"
+    rendered = renderer.render(src, "x", Path("/tmp"))
+    assert "<h1" not in rendered.html
