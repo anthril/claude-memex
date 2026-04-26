@@ -123,3 +123,24 @@ def test_sidebar_nav_suppresses_shortcut_duplicates(research_wiki_project: Path)
         assert "/sections/rule" not in nav
         assert "/sections/rules" not in nav
         assert "/sections/open-questions" not in nav
+
+
+def test_page_route_serves_asset_files(research_wiki_project: Path):
+    """The page route should serve non-markdown asset files (JSON schemas,
+    SVG diagrams, PDFs, etc.) when the literal path matches a file under
+    the wiki root. Otherwise links to those files get 404 even when the
+    file exists right where the markdown referenced it."""
+    asset_dir = research_wiki_project / ".memex" / "schemas"
+    asset_dir.mkdir(parents=True, exist_ok=True)
+    (asset_dir / "event.schema.json").write_text('{"type":"object"}')
+    with _client(research_wiki_project) as client:
+        r = client.get("/schemas/event.schema.json")
+        assert r.status_code == 200
+        assert r.json() == {"type": "object"}
+
+
+def test_page_route_404s_for_missing_asset(research_wiki_project: Path):
+    """Sanity — a non-existent asset path still 404s."""
+    with _client(research_wiki_project) as client:
+        r = client.get("/schemas/does-not-exist.json")
+        assert r.status_code == 404

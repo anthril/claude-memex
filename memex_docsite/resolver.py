@@ -41,9 +41,9 @@ def slug_to_path(slug: str, wiki_root: Path) -> Path | None:
     candidates = [
         (wiki_root / f"{slug}.md").resolve(),
         (wiki_root / slug / "index.md").resolve(),
+        (wiki_root / slug / "README.md").resolve(),
     ]
-    # Top-level `index` slug also falls back to `README.md` at the root —
-    # most repos have a README.md and no synthetic index.
+    # Top-level `index` slug also falls back to `README.md` at the root.
     if slug == "index":
         candidates.append((wiki_root / "README.md").resolve())
     for candidate in candidates:
@@ -67,11 +67,20 @@ def slug_to_url(slug: str) -> str:
 
 
 def resolve_relative(target: str, source_slug: str, wiki_root: Path) -> str | None:
-    """Resolve a relative markdown link against a source page's slug.
+    """Resolve a relative link against a source page's slug.
 
     `target` is the raw link target as written in the source markdown
-    (e.g., `../foo`, `subdir/page`, `page#heading`). Returns the canonical
-    slug it points to, or None if no file matches.
+    (e.g., `../foo`, `subdir/page`, `page#heading`, `../schemas/x.json`).
+    Returns the canonical slug-or-asset-path it points to, or None if no
+    file matches.
+
+    Two-pass resolution:
+      1. Treat the target as a markdown page (strip `.md` if present, try
+         `slug_to_path`). Returns a canonical slug.
+      2. If that fails, treat the target as a literal asset (preserve any
+         extension, check that the file exists under `wiki_root`). Returns
+         the asset path verbatim — the page route will serve it via
+         `FileResponse` with a guessed content-type.
     """
     target = target.strip()
     if not target or target.startswith(("http://", "https://", "mailto:", "#", "/")):
@@ -81,24 +90,55 @@ def resolve_relative(target: str, source_slug: str, wiki_root: Path) -> str | No
     if "#" in target:
         target, fragment = target.split("#", 1)
 
-    if target.endswith(".md"):
-        target = target[:-3]
+    md_target = target[:-3] if target.endswith(".md") else target
 
     source_dir = Path(source_slug).parent if "/" in source_slug else Path("")
-    combined = (source_dir / target).as_posix()
-    parts: list[str] = []
-    for part in combined.split("/"):
-        if part in ("", "."):
-            continue
-        if part == "..":
-            if parts:
-                parts.pop()
-            else:
-                return None  # escapes the wiki root
-            continue
-        parts.append(part)
-    candidate_slug = "/".join(parts) or "index"
 
-    if slug_to_path(candidate_slug, wiki_root) is None:
-        return None
-    return f"{candidate_slug}#{fragment}" if fragment else candidate_slug
+    def _normalise(rel: str) -> str | None:
+        combined = (source_dir / rel).as_posix()
+        parts: list[str] = []
+        for part in combined.split("/"):
+            if part in ("", "."):
+                continue
+            if part == "..":
+                if parts:
+                    parts.pop()
+                else:
+                    return None  # escapes the wiki root
+                continue
+            parts.append(part)
+        return "/".join(parts) or "index"
+
+    # Pass 1: markdown page resolution.
+    md_slug = _normalise(md_target)
+    if md_slug is not None and slug_to_path(md_slug, wiki_root) is not None:
+        return f"{md_slug}#{fragment}" if fragment else md_slug
+
+    # Pass 1b: folder resolution. If the link points at a real directory
+    # under wiki_root, the live server's `_folder_response` will render an
+    # auto-generated folder index for it — don't mark such links broken.
+    if md_slug is not None:
+        folder = (wiki_root / md_slug).resolve()
+        try:
+            folder.relative_to(wiki_root.resolve())
+        except ValueError:
+            pass
+        else:
+            if folder.is_dir():
+                return f"{md_slug}#{fragment}" if fragment else md_slug
+
+    # Pass 2: literal asset resolution. Skip when the original target had no
+    # extension (we already tried .md above) — only kicks in for things like
+    # `.json`, `.svg`, `.png`, `.pdf`, `.csv`, etc.
+    if "." in Path(target).name and not target.endswith(".md"):
+        asset_slug = _normalise(target)
+        if asset_slug is not None:
+            asset_path = (wiki_root / asset_slug).resolve()
+            try:
+                asset_path.relative_to(wiki_root.resolve())
+            except ValueError:
+                return None
+            if asset_path.is_file():
+                return f"{asset_slug}#{fragment}" if fragment else asset_slug
+
+    return None

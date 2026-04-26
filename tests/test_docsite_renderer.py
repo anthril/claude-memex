@@ -152,3 +152,52 @@ def test_renderer_strip_is_case_insensitive():
     src = "---\ntitle: AURORA\n---\n\n# aurora\n\nBody.\n"
     rendered = renderer.render(src, "x", Path("/tmp"))
     assert "<h1" not in rendered.html
+
+
+def test_renderer_resolves_asset_links_when_file_exists(tmp_path: Path):
+    """Links to non-markdown assets (.json, .svg, .pdf, .png, etc.) that
+    exist alongside the markdown source should resolve to a non-broken URL.
+    Previously the renderer only matched .md files, so every link to a JSON
+    schema or SVG diagram got marked broken even when the file was right
+    there."""
+    # Lay out: <wiki>/spec/page.md → ../schemas/event.schema.json
+    (tmp_path / "schemas").mkdir()
+    (tmp_path / "schemas" / "event.schema.json").write_text("{}")
+    (tmp_path / "spec").mkdir()
+    src = "Link to [event schema](../schemas/event.schema.json) here."
+    rendered = renderer.render(src, "spec/page", tmp_path)
+    assert rendered.broken_links == []
+    assert 'href="/schemas/event.schema.json"' in rendered.html
+
+
+def test_renderer_resolves_folder_links_with_readme(tmp_path: Path):
+    """Folder links like `decisions/` should resolve when the folder
+    contains README.md (not just index.md). Aurora and most markdown
+    repos use README.md as the folder landing page; the resolver was
+    only checking index.md and the top-level README."""
+    (tmp_path / "decisions").mkdir()
+    (tmp_path / "decisions" / "README.md").write_text("# Decisions")
+    src = "See [decisions](decisions/) for the log."
+    rendered = renderer.render(src, "index", tmp_path)
+    assert rendered.broken_links == []
+
+
+def test_renderer_resolves_folder_links_to_directories_with_no_readme(
+    tmp_path: Path,
+):
+    """If a folder exists but has no README/index, the link still resolves
+    — the live server's `_folder_response` will auto-generate a folder
+    index. Marking the link broken would surface a false positive."""
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "study-1").mkdir()
+    (tmp_path / "data" / "study-1" / "README.md").write_text("# Study 1")
+    src = "Datasets live in [data](data/)."
+    rendered = renderer.render(src, "index", tmp_path)
+    assert rendered.broken_links == []
+
+
+def test_renderer_keeps_marking_truly_missing_assets_broken(tmp_path: Path):
+    """Sanity — links to genuinely-missing assets still get flagged."""
+    src = "Link to [missing](../schemas/does-not-exist.json)."
+    rendered = renderer.render(src, "spec/page", tmp_path)
+    assert "../schemas/does-not-exist.json" in rendered.broken_links

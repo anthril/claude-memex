@@ -287,6 +287,18 @@ def _page_response(
             folder = None  # type: ignore[assignment]
         if folder and folder.is_dir() and not cfg.is_ignored(slug + "/"):
             return _folder_response(cfg, env, slug, folder)
+        # Last resort: literal file at this path (e.g. linked JSON schemas,
+        # SVG diagrams, PDFs sitting alongside markdown). Serve as
+        # FileResponse with a guessed content-type. The renderer's
+        # `resolve_relative` already validates the link exists, so this
+        # is the wire-up that makes those links return 200 instead of 404.
+        asset = (cfg.wiki_root / slug).resolve()
+        try:
+            asset.relative_to(cfg.wiki_root.resolve())
+        except ValueError:
+            raise HTTPException(404) from None
+        if asset.is_file():
+            return FileResponse(asset)  # type: ignore[return-value]
         raise HTTPException(404)
 
     content = file_path.read_text(encoding="utf-8", errors="replace")

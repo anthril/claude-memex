@@ -4,6 +4,18 @@ All notable changes to `claude-memex` are documented here. Format follows [Keep 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.6] — 2026-04-27
+
+### Fixed
+
+- **Links to non-markdown asset files (`.json`, `.svg`, `.pdf`, `.png`, `.csv`, etc.) were marked broken even when the file existed.** The renderer's relative-link resolver only matched markdown targets — every link to a JSON schema, SVG diagram, or PDF report under the wiki root showed up as a broken link with a 404 if clicked. The resolver now does a two-pass match (markdown first, asset fallback), and the page route serves the literal file via `FileResponse` with a guessed content-type. Aurora went from **95 → 2 broken links** after this single fix; the remaining 2 are intentional `<YYYY-MM-DDTHH:MM:SSZ>` template placeholder markers in a `templates/` file.
+- **Folder links (`decisions/`, `data/`) failed when the folder used `README.md` instead of `index.md`.** `slug_to_path` only checked the README fallback at the wiki root, not for subfolders. Now any folder slug also tries `<slug>/README.md` — matches the convention of every github-rooted markdown repo.
+- **Links to folders that the live server *would* render via the auto-generated folder index were marked broken anyway.** The resolver now accepts directory targets that exist under the wiki root, since `_folder_response` will serve them regardless of whether they have a README/index.
+
+### Tests
+
+- 4 new renderer tests (asset resolution / folder fallback / no-README directories / sanity preserves real broken links) and 2 server-route tests (asset serving + missing-asset 404).
+
 ## [0.1.0-alpha.5] — 2026-04-26
 
 ### Fixed
