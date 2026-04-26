@@ -155,6 +155,72 @@ body.graph-page .content {
 .tree-leaf.active { background: var(--accent); color: var(--accent-fg); }
 .tree-hidden > summary { font-style: italic; opacity: 0.85; }
 
+/* Section landing pages: collapsible folder tree of pages in the section. */
+.section-tree { display: block; margin-top: 16px; }
+.section-tree-folder {
+  margin: 4px 0;
+  padding-left: 4px;
+  border-left: 2px solid var(--border);
+}
+.section-tree-folder > summary {
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  list-style: none; /* hide default disclosure triangle in some browsers */
+}
+.section-tree-folder > summary::-webkit-details-marker { display: none; }
+.section-tree-folder > summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 1em;
+  color: var(--fg-muted);
+  transition: transform 120ms ease;
+}
+.section-tree-folder[open] > summary::before { transform: rotate(90deg); }
+.section-tree-folder > summary:hover { background: var(--code-bg); }
+.section-tree-folder-label { color: var(--fg); }
+.section-tree-folder-link { color: var(--fg); text-decoration: none; }
+.section-tree-folder-link strong { font-weight: 600; }
+.section-tree-folder-link:hover { color: var(--accent); }
+.section-tree-count {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 0 6px;
+  background: var(--code-bg);
+  color: var(--fg-muted);
+  border-radius: 999px;
+  font-size: 0.78em;
+  font-weight: 500;
+}
+.section-tree-children {
+  list-style: none;
+  padding-left: 18px;
+  margin: 4px 0 8px;
+  display: grid;
+  gap: 2px;
+}
+.section-tree-leaf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--fg);
+  text-decoration: none;
+}
+.section-tree-leaf:hover {
+  background: var(--code-bg);
+  text-decoration: none;
+}
+.section-tree-leaf-title { flex: 1 1 auto; }
+
 .content {
   padding: 32px 48px;
   max-width: calc(var(--content-max) + 96px);

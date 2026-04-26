@@ -1,6 +1,6 @@
 [project]
 name = "claude-memex"
-version = "0.1.0a7"
+version = "0.1.0a8"
 description = "Claude Code plugin for LLM-maintained, hook-enforced project wikis."
 readme = "README.md"
 license = { file = "LICENSE" }

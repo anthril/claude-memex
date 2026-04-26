@@ -254,6 +254,83 @@ def test_folder_fallback_skips_dot_segments(research_wiki_project: Path):
     assert [n.slug for n in by_slug["wiki"].pages] == [".memex/wiki/entities/x"]
 
 
+def test_build_section_tree_groups_by_folder(research_wiki_project: Path):
+    """`build_section_tree` produces a recursive folder tree from a flat
+    list of section pages. Folders sort before leaves; both alphabetical."""
+    pages = [
+        Node(slug="architecture/pre/01-event", title="Event substrate", type="spec"),
+        Node(slug="architecture/pre/02-gyms", title="Training gyms", type="spec"),
+        Node(slug="architecture/decisions/adr-1", title="ADR-1", type="decision"),
+        Node(slug="architecture/glossary", title="Glossary"),
+    ]
+    tree = sections_mod.build_section_tree(pages)
+    # Top-level: single "architecture" folder.
+    assert len(tree.children) == 1
+    arch = tree.children[0]
+    assert arch.is_folder
+    assert arch.name == "architecture"
+    # Inside: two folders (decisions, pre) + one leaf (glossary).
+    # Folders sort first, then the leaf.
+    names = [c.name for c in arch.children]
+    assert names[:2] == ["decisions", "pre"], names
+    assert names[-1] == "glossary"
+    # Leaves under "pre" are present.
+    pre = next(c for c in arch.children if c.name == "pre")
+    assert {c.title for c in pre.children} == {"Event substrate", "Training gyms"}
+
+
+def test_build_section_tree_promotes_folder_index_pages(research_wiki_project: Path):
+    """A page whose slug ends in `index` or `README` becomes its parent
+    folder's *landing page* (slug attached to the folder), not a separate
+    child leaf — clicking the folder summary navigates to that page."""
+    pages = [
+        Node(slug="architecture/index", title="Architecture overview"),
+        Node(slug="architecture/spec/index", title="Spec overview"),
+        Node(slug="architecture/spec/event", title="Event"),
+        Node(slug="data/study-1/README", title="Study 1"),
+    ]
+    tree = sections_mod.build_section_tree(pages)
+    by_name = {c.name: c for c in tree.children}
+    assert "architecture" in by_name
+    assert by_name["architecture"].is_folder
+    # Architecture's landing page is the index.
+    assert by_name["architecture"].slug == "architecture/index"
+    assert by_name["architecture"].title == "Architecture overview"
+    # `spec/index` is attached to the `spec` subfolder.
+    spec = next(
+        c for c in by_name["architecture"].children if c.is_folder and c.name == "spec"
+    )
+    assert spec.slug == "architecture/spec/index"
+    # `event` remains a leaf.
+    event = next(c for c in spec.children if not c.is_folder)
+    assert event.title == "Event"
+    # README at study-1 becomes that folder's landing page.
+    data = by_name["data"]
+    study_1 = next(c for c in data.children if c.is_folder and c.name == "study-1")
+    assert study_1.slug == "data/study-1/README"
+
+
+def test_build_section_tree_sorts_folders_before_leaves(research_wiki_project: Path):
+    """In each directory: folders first, then leaves. Within each group,
+    alphabetical by title or name."""
+    pages = [
+        Node(slug="root/aaa-leaf", title="Aaa leaf"),
+        Node(slug="root/zzz-folder/inside", title="Inside zzz"),
+        Node(slug="root/bbb-folder/inside", title="Inside bbb"),
+        Node(slug="root/mmm-leaf", title="Mmm leaf"),
+    ]
+    tree = sections_mod.build_section_tree(pages)
+    root = tree.children[0]
+    names = [(c.name, c.is_folder) for c in root.children]
+    # bbb-folder, zzz-folder (folders first, alpha) — then aaa-leaf, mmm-leaf.
+    assert names == [
+        ("bbb-folder", True),
+        ("zzz-folder", True),
+        ("aaa-leaf", False),
+        ("mmm-leaf", False),
+    ]
+
+
 def test_section_kind_classification(research_wiki_project: Path):
     """Sections are classified into three kinds for sidebar grouping:
     curated (mapped to a frontmatter.type), authored (folder-only), or

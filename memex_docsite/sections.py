@@ -322,6 +322,114 @@ def suggest_section(
     return None
 
 
+_FOLDER_INDEX_NAMES = frozenset({"index", "readme"})
+
+
+@dataclass(slots=True)
+class SectionTreeNode:
+    """Recursive tree node for the section landing page.
+
+    A folder node has `is_folder=True`; a leaf (page) node has it False.
+    A folder may also carry `slug`/`title` of its landing page (when
+    `<folder>/index.md` or `<folder>/README.md` exists) so the template
+    can hyperlink the folder summary itself.
+    """
+
+    name: str
+    slug: str | None = None  # leaf: page slug; folder: optional landing-page slug
+    title: str | None = None
+    type: str | None = None
+    children: list[SectionTreeNode] = field(default_factory=list)
+    is_folder: bool = False
+
+
+def build_section_tree(pages: list[Node]) -> SectionTreeNode:
+    """Group a flat list of section pages into a recursive folder tree.
+
+    Pages whose final slug segment is `index` or `README` (case-insensitive)
+    are attached to their parent folder as the folder's *landing page*
+    rather than as a child leaf — clicking the folder summary navigates
+    to that page. Other pages become leaves under their folder.
+
+    Files at the same level sort first by title; folders sort after,
+    alphabetically. The root node has empty `name` and is iterated by
+    the template via `root.children`.
+    """
+    root = SectionTreeNode(name="")
+
+    def find_or_create_folder(cursor: SectionTreeNode, name: str) -> SectionTreeNode:
+        existing = next(
+            (c for c in cursor.children if c.is_folder and c.name == name),
+            None,
+        )
+        if existing is None:
+            existing = SectionTreeNode(name=name, is_folder=True)
+            cursor.children.append(existing)
+        return existing
+
+    def insert(parts: list[str], page: Node) -> None:
+        leaf_name = parts[-1]
+        if len(parts) >= 1 and leaf_name.casefold() in _FOLDER_INDEX_NAMES:
+            # Treat as a folder landing page. Find/create the parent
+            # folder and attach the page's slug/title to it.
+            if len(parts) == 1:
+                # `index` or `README` at the wiki root — keep as a leaf
+                # so it still appears (no parent folder to attach to).
+                root.children.append(
+                    SectionTreeNode(
+                        name=leaf_name,
+                        slug=page.slug,
+                        title=page.title,
+                        type=page.type,
+                    )
+                )
+                return
+            cursor = root
+            for segment in parts[:-2]:
+                cursor = find_or_create_folder(cursor, segment)
+            folder = find_or_create_folder(cursor, parts[-2])
+            folder.slug = page.slug
+            folder.title = page.title
+            folder.type = page.type
+            return
+
+        # Regular leaf — walk each non-leaf segment, creating folder
+        # nodes lazily, then add the page as a child.
+        cursor = root
+        for segment in parts[:-1]:
+            cursor = find_or_create_folder(cursor, segment)
+        cursor.children.append(
+            SectionTreeNode(
+                name=leaf_name,
+                slug=page.slug,
+                title=page.title,
+                type=page.type,
+            )
+        )
+
+    for page in pages:
+        parts = [p for p in page.slug.split("/") if p]
+        if not parts:
+            continue
+        insert(parts, page)
+
+    def sort_recursive(node: SectionTreeNode) -> None:
+        # Folders sort before leaves (so folder hierarchy reads top-down);
+        # within each kind, alphabetical by display label.
+        node.children.sort(
+            key=lambda n: (
+                not n.is_folder,
+                (n.title or n.name).casefold(),
+            )
+        )
+        for child in node.children:
+            if child.is_folder:
+                sort_recursive(child)
+
+    sort_recursive(root)
+    return root
+
+
 def display_name_for_type(cfg, type_value: str | None) -> str:
     """Return the configured display name for an enum type value, or a
     title-cased fallback."""

@@ -146,6 +146,40 @@ def test_page_route_404s_for_missing_asset(research_wiki_project: Path):
         assert r.status_code == 404
 
 
+def test_section_detail_renders_collapsible_folder_tree(
+    research_wiki_project: Path,
+):
+    """`/sections/<slug>` should group its pages by folder structure into a
+    collapsible `<details>` tree, not render a flat list."""
+    # Add a few real pages under wiki/entities so the Entities section
+    # has multi-folder content to group.
+    import json as _json
+    cfg_path = research_wiki_project / "memex.config.json"
+    raw = _json.loads(cfg_path.read_text())
+    raw["docsite"] = {"contentRoot": ".", "showHidden": True}
+    cfg_path.write_text(_json.dumps(raw))
+    base = research_wiki_project / ".memex" / "wiki" / "entities"
+    base.mkdir(parents=True, exist_ok=True)
+    for name in ("alpha", "beta"):
+        d = base / name
+        d.mkdir(exist_ok=True)
+        (d / "README.md").write_text(
+            f"---\ntitle: {name.title()}\nslug: {name}\ntype: entity\n"
+            f"status: active\nowner: x\ncreated: 2026-04-27\n"
+            f"updated: 2026-04-27\n---\n\nContent.\n"
+        )
+    with _client(research_wiki_project) as client:
+        r = client.get("/sections/entities")
+        assert r.status_code == 200
+        # Tree markup is present (not the old flat folder-listing).
+        assert 'class="section-tree"' in r.text
+        assert 'class="section-tree-folder"' in r.text
+        # `<details>` is open by default for first-load discoverability.
+        assert "<details" in r.text
+        # The folder summaries have count badges.
+        assert "section-tree-count" in r.text
+
+
 def test_folder_index_pages_resolve_relative_links_to_siblings(
     research_wiki_project: Path,
 ):

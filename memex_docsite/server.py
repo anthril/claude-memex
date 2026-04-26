@@ -152,6 +152,7 @@ def _section_detail_response(
         env,
         "sections/section.html",
         section=match,
+        section_tree=sections_module.build_section_tree(match.pages),
         slug_to_url=resolver.slug_to_url,
         type_display_name=sections_module.display_name_for_type(
             cfg, match.type_values[0] if match.type_values else None

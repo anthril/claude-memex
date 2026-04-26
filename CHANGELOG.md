@@ -4,6 +4,16 @@ All notable changes to `claude-memex` are documented here. Format follows [Keep 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.8] — 2026-04-27
+
+### Added
+
+- **Section landing pages now render a collapsible folder tree** instead of a flat page list. Pages group by their folder structure with `<details open>` elements you can click to collapse, count badges per folder, and folder-index pages (`<folder>/index.md`, `<folder>/README.md`) attached to their parent folder so the folder summary itself navigates to the landing page. Within each directory, folders sort first then leaves; both alphabetical. Built via a new `build_section_tree` in `memex_docsite/sections.py` that returns a recursive `SectionTreeNode` consumed by `templates/sections/section.html`.
+
+### Tests
+
+- 3 new sections tests (folder grouping, folder-index attachment, sort order) and 1 server-route test verifying the section detail page renders the new tree markup.
+
 ## [0.1.0-alpha.7] — 2026-04-27
 
 ### Fixed

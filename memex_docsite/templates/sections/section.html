@@ -1,6 +1,35 @@
 {% extends "base.html" %}
 {% block title %}{{ section.label }} — {{ site_title }}{% endblock %}
 
+{% macro render_node(node) %}
+  {% if node.is_folder %}
+    <details class="section-tree-folder" open>
+      <summary>
+        {% if node.slug %}
+          <a class="section-tree-folder-link" href="{{ node.slug | slug_to_url }}">
+            <strong>{{ node.title or node.name }}</strong>
+          </a>
+        {% else %}
+          <span class="section-tree-folder-label">{{ node.name }}</span>
+        {% endif %}
+        <span class="section-tree-count">{{ node.children | length }}</span>
+      </summary>
+      <ul class="section-tree-children">
+        {% for child in node.children %}
+          <li>{{ render_node(child) }}</li>
+        {% endfor %}
+      </ul>
+    </details>
+  {% else %}
+    <a class="section-tree-leaf" href="{{ node.slug | slug_to_url }}">
+      <span class="section-tree-leaf-title">{{ node.title or node.name }}</span>
+      {% if node.type %}
+        <span class="badge badge-type badge-type-{{ node.type }}">{{ node.type }}</span>
+      {% endif %}
+    </a>
+  {% endif %}
+{% endmacro %}
+
 {% block content %}
 <article class="page">
   <header class="page-header">
@@ -22,17 +51,12 @@
     {% endif %}.
   </p>
 
-  {% if section.pages %}
-    <ul class="folder-listing">
-      {% for node in section.pages %}
-        <li>
-          <a href="{{ node.slug | slug_to_url }}"><strong>{{ node.title }}</strong></a>
-          {% if node.type %}
-            <span class="badge badge-type badge-type-{{ node.type }}">{{ node.type }}</span>
-          {% endif %}
-        </li>
+  {% if section_tree.children %}
+    <nav class="section-tree" aria-label="{{ section.label }} contents">
+      {% for child in section_tree.children %}
+        {{ render_node(child) }}
       {% endfor %}
-    </ul>
+    </nav>
   {% else %}
     <p class="empty">
       {% if section.type_values %}
