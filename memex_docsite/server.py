@@ -37,6 +37,18 @@ PACKAGE_DIR = Path(__file__).parent
 TEMPLATES_DIR = PACKAGE_DIR / "templates"
 STATIC_DIR = PACKAGE_DIR / "static"
 
+# Section slugs that duplicate one of the hardcoded sidebar shortcuts in
+# `templates/base.html` (❓ Open questions / 📜 Rules / 💬 Comments /
+# ⛓ Link graph). `_shared_context` filters these out of the sections nav
+# so the sidebar doesn't render the same affordance twice.
+_SHORTCUT_SECTION_SLUGS = frozenset({
+    "open-questions",
+    "rule",
+    "rules",
+    "comments",
+    "graph",
+})
+
 
 def _redirect_after_post(url: str) -> RedirectResponse:
     """303 — POST handlers return this so refresh doesn't repost."""
@@ -234,6 +246,11 @@ def _shared_context(
             # actual content. User-declared sections always render so empty
             # ones still hint "this section exists, file something here".
             if s.is_synthetic and s.count == 0:
+                continue
+            # Suppress sections that duplicate a hardcoded sidebar shortcut
+            # — Open Questions, Rules, Comments, Link graph all already have
+            # dedicated icons + counts at the top of the sidebar.
+            if s.slug in _SHORTCUT_SECTION_SLUGS:
                 continue
             section_summaries.append(
                 {"label": s.label, "slug": s.slug, "count": s.count}

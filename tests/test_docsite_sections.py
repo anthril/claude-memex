@@ -143,6 +143,117 @@ def test_recent_activity_section_populated_from_updated_desc(research_wiki_proje
     assert [n.slug for n in recent] == ["newest", "recent", "old"]
 
 
+def test_sections_include_hidden_when_show_hidden_true(research_wiki_project: Path):
+    """Regression — when `docsite.contentRoot` is widened past `.memex/`,
+    every wiki page's path starts with `.memex/` (a dotted segment) and so
+    its `Node.is_hidden` flag is True. Section assignment must respect
+    `cfg.show_hidden` (default True) and not unconditionally skip those
+    nodes — otherwise the user sees every typed page land in Uncategorised
+    instead of its proper section.
+    """
+    cfg_path = research_wiki_project / "memex.config.json"
+    raw = json.loads(cfg_path.read_text())
+    raw["docsite"] = {"contentRoot": ".", "showHidden": True}
+    cfg_path.write_text(json.dumps(raw))
+    cfg = cfg_mod.load(start=research_wiki_project)
+    # All wiki nodes are now "hidden" because the widened wiki_root sees
+    # them under `.memex/wiki/...`.
+    graph = Graph(
+        nodes=[
+            Node(slug=".memex/wiki/entities/x", title="X", type="entity", is_hidden=True),
+            Node(slug=".memex/wiki/concepts/y", title="Y", type="concept", is_hidden=True),
+        ]
+    )
+    sections = sections_mod.build_sections(cfg, graph)
+    by_slug = {s.slug: s for s in sections}
+    assert [n.slug for n in by_slug["entities"].pages] == [".memex/wiki/entities/x"]
+    assert [n.slug for n in by_slug["concepts"].pages] == [".memex/wiki/concepts/y"]
+
+
+def test_sections_skip_hidden_when_show_hidden_false(research_wiki_project: Path):
+    """Companion — when `showHidden: false`, hidden nodes really should be
+    excluded from section assignment (matches the graph builder's behaviour
+    and respects the user's explicit opt-out)."""
+    cfg_path = research_wiki_project / "memex.config.json"
+    raw = json.loads(cfg_path.read_text())
+    raw["docsite"] = {"showHidden": False}
+    cfg_path.write_text(json.dumps(raw))
+    cfg = cfg_mod.load(start=research_wiki_project)
+    graph = Graph(
+        nodes=[
+            Node(slug="entities/visible", title="V", type="entity", is_hidden=False),
+            Node(slug=".hidden/secret", title="H", type="entity", is_hidden=True),
+        ]
+    )
+    sections = sections_mod.build_sections(cfg, graph)
+    by_slug = {s.slug: s for s in sections}
+    assert [n.slug for n in by_slug["entities"].pages] == ["entities/visible"]
+
+
+def test_folder_fallback_assigns_pages_by_first_segment(
+    research_wiki_project: Path,
+):
+    """When a node has no `type` (or its type isn't in any section's
+    `type_values`), fall back to matching the first non-dot folder
+    segment of its slug against section slugs / kebab'd labels.
+    Lets a page at `architecture/foo/README.md` land in an "Architecture"
+    section without needing `type: architecture` on every file.
+    """
+    cfg_path = research_wiki_project / "memex.config.json"
+    raw = json.loads(cfg_path.read_text())
+    raw["index"]["sections"] = [
+        "Entities",
+        "Architecture",
+        "Research",
+        "Code Examples",
+    ]
+    raw["docsite"] = {"contentRoot": ".", "showHidden": True}
+    cfg_path.write_text(json.dumps(raw))
+    cfg = cfg_mod.load(start=research_wiki_project)
+    graph = Graph(
+        nodes=[
+            Node(slug="architecture/spec/foo", title="A1", type=None),
+            Node(slug="architecture/spec/bar", title="A2", type="spec"),
+            Node(slug="research/methodology/m1", title="R1", type=None),
+            Node(slug="code-examples/snippet", title="C1", type=None),
+            Node(slug=".memex/wiki/entities/x", title="E1", type="entity", is_hidden=True),
+        ]
+    )
+    sections = sections_mod.build_sections(cfg, graph)
+    by_slug = {s.slug: s for s in sections}
+    # Type-based assignment still wins where the type matches.
+    assert {n.slug for n in by_slug["entities"].pages} == {".memex/wiki/entities/x"}
+    # Folder-based fallback for the rest.
+    assert {n.slug for n in by_slug["architecture"].pages} == {
+        "architecture/spec/foo",
+        "architecture/spec/bar",  # `spec` type doesn't match any section, so folder wins
+    }
+    assert {n.slug for n in by_slug["research"].pages} == {"research/methodology/m1"}
+    assert {n.slug for n in by_slug["code-examples"].pages} == {"code-examples/snippet"}
+    # Nothing should land in Uncategorised — every node had either a
+    # matching type or a matching folder.
+    assert "uncategorised" not in by_slug
+
+
+def test_folder_fallback_skips_dot_segments(research_wiki_project: Path):
+    """The folder fallback should look past leading dot-folders so
+    `.memex/wiki/entities/x` matches by `wiki`, not `.memex`."""
+    cfg_path = research_wiki_project / "memex.config.json"
+    raw = json.loads(cfg_path.read_text())
+    raw["index"]["sections"] = ["Wiki"]
+    raw["docsite"] = {"contentRoot": ".", "showHidden": True}
+    cfg_path.write_text(json.dumps(raw))
+    cfg = cfg_mod.load(start=research_wiki_project)
+    graph = Graph(
+        nodes=[
+            Node(slug=".memex/wiki/entities/x", title="X", type=None, is_hidden=True),
+        ]
+    )
+    sections = sections_mod.build_sections(cfg, graph)
+    by_slug = {s.slug: s for s in sections}
+    assert [n.slug for n in by_slug["wiki"].pages] == [".memex/wiki/entities/x"]
+
+
 def test_synthetic_sections_marked(research_wiki_project: Path):
     """Auto-appended (uncovered enum) and Uncategorised sections carry an
     `is_synthetic` flag so the sidebar can elide them when empty."""

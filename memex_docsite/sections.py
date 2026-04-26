@@ -137,6 +137,24 @@ def _section_specs(
     return specs
 
 
+def _section_for_slug(slug: str, folder_to_section: dict) -> Section | None:
+    """Return the section a slug maps to via folder convention, or None.
+
+    Walks the slug's path segments left-to-right and returns the first
+    folder match. Skips leading dot-folders (so `.memex/wiki/entities/x`
+    looks at `wiki` first, then `entities`) — the dot-folder itself is
+    metadata rather than a content section.
+    """
+    if not slug:
+        return None
+    parts = [p for p in slug.split("/") if p and not p.startswith(".")]
+    for part in parts:
+        hit = folder_to_section.get(part.casefold())
+        if hit is not None:
+            return hit
+    return None
+
+
 def build_sections(
     cfg,  # DocsiteConfig — avoid circular import
     graph: Graph,
@@ -170,21 +188,46 @@ def build_sections(
         )
         seen_types.add(enum_value)
 
-    # Assign pages. A page lands in the first section whose `type_values`
-    # contains its `Node.type`. Pages with no type or no matching section
-    # fall through to "Uncategorised" (only kept if non-empty).
+    # Assign pages. A page lands in the first section that matches by:
+    # 1. `Node.type` ∈ section.type_values  (the strict typed path)
+    # 2. first folder segment of `Node.slug` matches the section slug or its
+    #    kebab'd label (the folder-fallback path) — lets a page at
+    #    `architecture/foo.md` land in an "Architecture" section without
+    #    needing a `type: architecture` frontmatter on every file.
+    # Pages with no type and no matching folder segment fall through to
+    # "Uncategorised" (only kept if non-empty).
     type_to_section: dict[str, Section] = {}
+    folder_to_section: dict[str, Section] = {}
     for s in sections:
         for t in s.type_values:
             type_to_section.setdefault(t, s)
+        # The section's slug + a kebab'd version of its label are both valid
+        # folder matches. Skip dot-prefixed labels (Open Questions / Rules
+        # — those folders are dot-folders that have dedicated UI elsewhere).
+        folder_keys = {s.slug.casefold(), slugify_label(s.label)}
+        for key in folder_keys:
+            if key and not key.startswith("."):
+                folder_to_section.setdefault(key, s)
 
     uncategorised = Section(
         slug="uncategorised", label="Uncategorised", is_synthetic=True
     )
+    # Respect `cfg.show_hidden` — when a project widens `docsite.contentRoot`
+    # past `.memex/`, every wiki page's path starts with `.memex/` (a dotted
+    # segment) and so flags `is_hidden=True`. Skipping those would hide the
+    # entire wiki from the sections nav. The graph builder already honours
+    # show_hidden when populating nodes; this loop should mirror it.
+    show_hidden = bool(getattr(cfg, "show_hidden", True))
     for node in graph.nodes:
-        if node.is_hidden:
+        if node.is_hidden and not show_hidden:
             continue
         target = type_to_section.get(node.type or "")
+        if target is None:
+            # Fallback: first folder segment of the slug, skipping any
+            # leading dot-folder (so `.memex/wiki/entities/x` matches by
+            # `wiki` first, then by deeper segments — but section assignment
+            # only checks the non-dot top-level segment).
+            target = _section_for_slug(node.slug, folder_to_section)
         if target is not None:
             target.pages.append(node)
         else:
@@ -200,10 +243,15 @@ def build_sections(
     # Populate virtual "Recent Activity" sections from `frontmatter.updated`
     # desc — these have empty `type_values` so they wouldn't otherwise pick
     # up any pages. Only nodes with a parseable `updated` are eligible.
+    # Mirror the show_hidden gate above so wiki pages under `.memex/` show
+    # up when `contentRoot` is widened.
     for s in sections:
         if s.slug not in _RECENT_ACTIVITY_SLUGS:
             continue
-        recent = [n for n in graph.nodes if n.updated and not n.is_hidden]
+        recent = [
+            n for n in graph.nodes
+            if n.updated and (show_hidden or not n.is_hidden)
+        ]
         recent.sort(key=lambda n: n.updated or "", reverse=True)
         s.pages = recent[:_RECENT_ACTIVITY_LIMIT]
 

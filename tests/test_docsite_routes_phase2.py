@@ -88,3 +88,38 @@ def test_section_detail_404_for_unknown_slug(research_wiki_project: Path):
     with _client(research_wiki_project) as client:
         r = client.get("/sections/does-not-exist")
         assert r.status_code == 404
+
+
+def test_sidebar_nav_suppresses_shortcut_duplicates(research_wiki_project: Path):
+    """Sections whose slug duplicates a hardcoded sidebar shortcut
+    (Open Questions, Rules, Comments, Link graph) should not appear a
+    second time in the sections nav."""
+    import json
+    import re
+    cfg_path = research_wiki_project / "memex.config.json"
+    raw = json.loads(cfg_path.read_text())
+    # Stack the deck — declare both Open Questions AND Rule(s) as sections,
+    # then verify they're filtered from the sidebar nav (still rendered as
+    # /sections/<slug>/ landing pages, just not in the chrome).
+    raw["index"]["sections"] = ["Entities", "Concepts", "Open Questions", "Rules"]
+    cfg_path.write_text(json.dumps(raw))
+
+    with _client(research_wiki_project) as client:
+        r = client.get("/")
+        assert r.status_code == 200
+        block = re.search(
+            r'<nav class="sidebar-sections".*?</nav>', r.text, re.DOTALL
+        )
+        assert block, "sidebar-sections nav not rendered"
+        nav = block.group(0)
+        # Still includes the proper content sections.
+        assert "Entities" in nav
+        assert "Concepts" in nav
+        # Suppresses the duplicates.
+        assert "Open Questions" not in nav
+        assert "Rules" not in nav
+        # The auto-appended `rule` synthetic section is also suppressed
+        # (it would have been a singular "Rule" otherwise).
+        assert "/sections/rule" not in nav
+        assert "/sections/rules" not in nav
+        assert "/sections/open-questions" not in nav

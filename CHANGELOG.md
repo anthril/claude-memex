@@ -4,6 +4,21 @@ All notable changes to `claude-memex` are documented here. Format follows [Keep 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.4] — 2026-04-26
+
+### Fixed
+
+- **Sections nav was empty whenever `docsite.contentRoot` was widened past `.memex/`.** Every wiki page's path then started with `.memex/...` so its `Node.is_hidden` flag was True; `build_sections` was unconditionally skipping hidden nodes, which dropped the entire wiki from the sections nav. The loop (and the recent-activity loop) now respect `cfg.show_hidden` instead — matching the graph builder's behaviour. Wikis using the default root are unaffected.
+
+### Added
+
+- **Folder-based section fallback.** When a node has no `frontmatter.type` (or its type isn't in any section's `type_values`), the page now lands in the first section whose `slug` or kebab'd label matches its first non-dot folder segment. Lets a page at `architecture/foo.md` land in an "Architecture" section without needing `type: architecture` on every file. Existing type-based assignment still wins where it applies.
+- **Sidebar shortcut deduplication.** Sections whose slug duplicates a hardcoded sidebar shortcut (`open-questions`, `rule(s)`, `comments`, `graph`) are now hidden from the sections nav — they keep their `/sections/<slug>/` landing page but don't render in the sidebar a second time.
+
+### Tests
+
+- 3 new regression tests in `test_docsite_sections.py` (folder fallback, dot-segment skipping) and 1 in `test_docsite_routes_phase2.py` (sidebar shortcut suppression).
+
 ## [0.1.0-alpha.3] — 2026-04-26
 
 ### Fixed
