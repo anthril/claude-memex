@@ -56,3 +56,4 @@ Inputs: old slug, new slug.
 - If a referencing page has a `## Changelog`, append a note: `renamed <old> → <new>` on YYYY-MM-DD
 - If the user hasn't committed recent changes, warn them before starting — refactors have wide blast radius
 - If the wiki is large (>50 pages) prefer running as the `memex-linter` subagent in worktree isolation so the main session doesn't inherit the churn
+- If `memex-docsite serve` is running, refactored URLs may break readers' open tabs — call out renames in the user-facing summary so they can refresh

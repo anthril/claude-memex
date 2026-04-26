@@ -15,12 +15,30 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import frontmatter
+from . import frontmatter, wiki_log
 from .config import DocsiteConfig
 
 OPEN_QUESTIONS_DIR = ".open-questions"
 RESOLVED_DIR = ".resolved"
 RULES_DIR = ".rules"
+
+
+def is_resolved(path: Path, fm: dict | None) -> bool:
+    """An open question is resolved if its frontmatter says so OR it lives
+    under a `.resolved/` directory. The folder convention is the older path
+    (driven by `resolve_open_question`); the inline `status: resolved`
+    convention is what most authors / ingestion paths actually write.
+    """
+    fm = fm or {}
+    if str(fm.get("status", "")).strip().lower() == "resolved":
+        return True
+    return any(part == RESOLVED_DIR for part in path.parts)
+
+# Files inside `.open-questions/` and `.rules/` that are documentation
+# *about* the folder rather than actual entries. Profile scaffolds drop
+# README.md into these dirs to explain the convention; we don't want
+# them showing up as "open questions" or "rules" in the docsite.
+_NON_ENTRY_FILES = frozenset({"README.md", "AGENTS.md", "index.md"})
 
 _SAFE_SLUG = re.compile(r"[^a-z0-9]+")
 
@@ -112,7 +130,7 @@ def submit_open_question(
     owner: str | None = None,
     related: str | None = None,
 ) -> WriteResult:
-    folder = _ensure_dir(cfg.wiki_root / OPEN_QUESTIONS_DIR)
+    folder = _ensure_dir(cfg.memex_root / OPEN_QUESTIONS_DIR)
     slug = unique_slug(folder, slugify(title))
     fm = _build_frontmatter(
         cfg=cfg,
@@ -125,11 +143,16 @@ def submit_open_question(
     _validate(content, cfg)
     target = folder / f"{slug}.md"
     target.write_text(content, encoding="utf-8")
+    wiki_log.append_entry(
+        cfg,
+        event="open-question",
+        subject=f"{title} (by {author})",
+    )
     return WriteResult(path=target, slug=slug)
 
 
 def resolve_open_question(cfg: DocsiteConfig, slug: str, *, resolver: str) -> WriteResult:
-    folder = cfg.wiki_root / OPEN_QUESTIONS_DIR
+    folder = cfg.memex_root / OPEN_QUESTIONS_DIR
     src = folder / f"{slug}.md"
     if not src.is_file():
         raise FileNotFoundError(f"open question not found: {slug}")
@@ -149,6 +172,11 @@ def resolve_open_question(cfg: DocsiteConfig, slug: str, *, resolver: str) -> Wr
         counter += 1
     target.write_text(new_content, encoding="utf-8")
     src.unlink()
+    wiki_log.append_entry(
+        cfg,
+        event="resolved",
+        subject=f"{slug} (by {resolver})",
+    )
     return WriteResult(path=target, slug=slug)
 
 
@@ -161,7 +189,7 @@ def submit_rule(
     owner: str | None = None,
     scope: str | None = None,
 ) -> WriteResult:
-    folder = _ensure_dir(cfg.wiki_root / RULES_DIR)
+    folder = _ensure_dir(cfg.memex_root / RULES_DIR)
     slug = unique_slug(folder, slugify(title))
     fm = _build_frontmatter(
         cfg=cfg,
@@ -174,38 +202,57 @@ def submit_rule(
     _validate(content, cfg)
     target = folder / f"{slug}.md"
     target.write_text(content, encoding="utf-8")
+    wiki_log.append_entry(
+        cfg,
+        event="rule",
+        subject=f"{title} (by {author})",
+    )
     return WriteResult(path=target, slug=slug)
 
 
 def list_open_questions(cfg: DocsiteConfig) -> list[dict]:
-    """Return [{slug, title, status, created, body_preview, resolved}, ...]."""
+    """Return [{slug, title, status, created, body_preview, resolved, ...}, ...].
+
+    Resolution is determined by `is_resolved(path, fm)` so authors can flip a
+    page to resolved by writing `status: resolved` in frontmatter without
+    having to physically move the file into `.resolved/`.
+    """
     out = []
-    folder = cfg.wiki_root / OPEN_QUESTIONS_DIR
+    folder = cfg.memex_root / OPEN_QUESTIONS_DIR
     if folder.is_dir():
         for path in sorted(folder.glob("*.md")):
-            out.append(_summarise(path, resolved=False, wiki_root=cfg.wiki_root))
+            if path.name in _NON_ENTRY_FILES:
+                continue
+            out.append(_summarise(path, wiki_root=cfg.memex_root))
     resolved_dir = folder / RESOLVED_DIR
     if resolved_dir.is_dir():
         for path in sorted(resolved_dir.glob("*.md")):
-            out.append(_summarise(path, resolved=True, wiki_root=cfg.wiki_root))
+            if path.name in _NON_ENTRY_FILES:
+                continue
+            out.append(_summarise(path, wiki_root=cfg.memex_root))
     return out
 
 
 def list_rules(cfg: DocsiteConfig) -> list[dict]:
-    folder = cfg.wiki_root / RULES_DIR
+    folder = cfg.memex_root / RULES_DIR
     if not folder.is_dir():
         return []
     return [
-        _summarise(path, resolved=False, wiki_root=cfg.wiki_root)
+        _summarise(path, wiki_root=cfg.memex_root)
         for path in sorted(folder.glob("*.md"))
+        if path.name not in _NON_ENTRY_FILES
     ]
 
 
-def _summarise(path: Path, *, resolved: bool, wiki_root: Path | None = None) -> dict:
+def _summarise(path: Path, *, wiki_root: Path | None = None) -> dict:
     try:
         content = path.read_text(encoding="utf-8", errors="replace")
     except OSError:
-        return {"slug": path.stem, "title": path.stem, "resolved": resolved}
+        return {
+            "slug": path.stem,
+            "title": path.stem,
+            "resolved": any(part == RESOLVED_DIR for part in path.parts),
+        }
     fm, body = frontmatter.split(content)
     fm = fm or {}
     preview = body.strip().split("\n\n", 1)[0][:200].replace("\n", " ").strip()
@@ -216,6 +263,10 @@ def _summarise(path: Path, *, resolved: bool, wiki_root: Path | None = None) -> 
             url = None
     else:
         url = None
+    # Authors write `resolved-on:` (kebab); the auto-resolve flow writes
+    # `resolved_at` (snake). Accept either, plus `resolved_on` for symmetry.
+    resolved_on = fm.get("resolved-on") or fm.get("resolved_on") or fm.get("resolved_at")
+    resolved_by = fm.get("resolved-by") or fm.get("resolved_by")
     return {
         "slug": fm.get("slug") or path.stem,
         "title": fm.get("title") or path.stem,
@@ -223,7 +274,9 @@ def _summarise(path: Path, *, resolved: bool, wiki_root: Path | None = None) -> 
         "created": fm.get("created"),
         "owner": fm.get("owner"),
         "body_preview": preview,
-        "resolved": resolved,
+        "resolved": is_resolved(path, fm),
+        "resolved_on": resolved_on,
+        "resolved_by": resolved_by,
         "url": url,
         "path": str(path),
     }

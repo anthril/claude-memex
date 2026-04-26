@@ -38,6 +38,17 @@ cd claude-memex
 python -m pip install -e ".[dev]"
 ```
 
+### Running the docsite locally
+
+If you're touching anything under `memex_docsite/` (or its tests):
+
+```bash
+python -m pip install -e ".[docsite,dev]"   # add docsite + dev extras
+memex-docsite --cwd examples/research-wiki-demo serve
+```
+
+The docsite walks up from `--cwd` looking for `memex.config.json`. The `examples/` projects all have one, so any of them is a quick smoke-test target. See [`docs/docsite.md`](docs/docsite.md) for the full developer guide and [`docs/docker.md`](docs/docker.md) for the Docker workflow.
+
 ### Running tests
 
 ```bash
@@ -49,8 +60,8 @@ pytest -k unicode                 # by keyword
 ### Lint + type check
 
 ```bash
-ruff check hooks/ tests/ scripts/
-mypy hooks/
+ruff check hooks/ tests/ scripts/ memex_docsite/
+mypy hooks/ memex_docsite/
 ```
 
 CI runs both on every PR. Please make sure they pass locally first.
@@ -87,6 +98,7 @@ Before you open a PR, make sure:
 - [ ] `mypy` passes (or you've documented why new issues are unavoidable)
 - [ ] Updated `CHANGELOG.md` under `## [Unreleased]`
 - [ ] Updated relevant docs (README, docs/*.md, schema, or profile files)
+- [ ] If you touched `memex_docsite/`: ran `memex-docsite --cwd examples/research-wiki-demo check` (catches Jinja regressions and broken-link drift)
 
 ## Reviewing culture
 

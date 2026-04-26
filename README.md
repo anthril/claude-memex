@@ -63,6 +63,10 @@ Three things make the wiki stay current instead of rotting:
 
 See [`docs/concepts.md`](docs/concepts.md) for the full model.
 
+### The docsite (optional)
+
+Memex ships an optional self-hosted browsable view of any wiki it manages. Install with `pip install -e ".[docsite]"` (or use the Docker image), then run `memex-docsite serve` from any project that has a `memex.config.json`. The docsite reads the same config the hooks do — there is no parallel index — and ships seven phases of features: Markdown rendering, search, link graph (interactive 3D, Obsidian-style), open-question + rule submissions, inline annotations (W3C `TextQuoteSelector`), page-level comments, and a Docker self-host image. Sidebar nav is profile-driven: `index.sections` becomes a "Sections" group, `frontmatter.enum.type` drives coloured badges, and `/sections/<type>/` lists every page of that type. Browser-driven writes append to `log.md` so the next Claude session sees the activity. See [`docs/docsite.md`](docs/docsite.md) for the full guide and [`docs/docker.md`](docs/docker.md) for self-host. Drive it from inside Claude with `/memex:docsite serve`.
+
 ---
 
 ## Quick start
@@ -119,14 +123,20 @@ claude-memex/
 │   └── scripts/                   # Python hook scripts (+ _lib/ helpers)
 ├── skills/                        # Auto-invoked skills
 ├── agents/                        # Subagents
-├── commands/                      # Slash commands
+├── commands/                      # Slash commands (incl. /memex:docsite)
 ├── templates/profiles/            # Seedable profile trees
 ├── templates/shared/              # Generic starter templates
 ├── schemas/memex.config.schema.json
-├── scripts/                          # Ancillary scripts (version checks, etc.)
-├── docs/                          # Plugin docs
+├── memex_docsite/                 # Optional self-hosted browsable docsite
+│   ├── server.py / exporter.py    # Starlette live + static
+│   ├── templates/ static/         # Jinja templates + vanilla JS/CSS
+│   └── cli.py                     # `memex-docsite serve|build|check`
+├── scripts/                       # Ancillary scripts (version checks, etc.)
+├── docs/                          # Plugin docs (concepts, docsite, docker, …)
 ├── examples/                      # Demo projects (incl. worked research-wiki demo)
-├── tests/                         # 227 pytest tests
+├── tests/                         # 240+ pytest tests
+├── Dockerfile                     # Self-host image for memex-docsite
+├── docker-compose.yml             # Compose recipe (mount your wiki at /wiki)
 ├── CREDITS.md
 ├── SECURITY.md
 ├── CONTRIBUTING.md

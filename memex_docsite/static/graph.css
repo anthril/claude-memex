@@ -1,0 +1,186 @@
+/* memex-docsite — link graph styles */
+
+.graph-page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* Fills the viewport minus the site header (50px). The chart bleeds to
+   * the top + right viewport edges; left padding comes from .content. */
+  height: calc(100vh - 50px);
+  position: relative;
+  padding-top: 12px;
+}
+
+.graph-page-shell > .page-header {
+  margin: 0;
+  padding: 0 16px;
+}
+
+.graph-page-shell > .graph-controls {
+  margin: 0 16px;
+}
+
+#graph.graph-canvas {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0; /* allow flex to actually shrink/grow within the column */
+  position: relative;
+  background: var(--bg);
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  overflow: hidden;
+  margin: 0;
+  /* Three.js canvas is positioned absolutely inside; ensure pointer events
+   * always reach it (some sidebar overlays would otherwise intercept). */
+  touch-action: none;
+}
+
+#graph canvas {
+  display: block;
+}
+
+.graph-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+  font-size: 0.9em;
+  color: var(--fg-muted);
+}
+
+.graph-controls-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 6px 10px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.graph-controls-actions {
+  margin-left: auto;
+}
+
+.graph-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-controls button,
+.graph-controls a {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9em;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.graph-controls button:hover,
+.graph-controls a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.graph-controls button:active {
+  transform: translateY(1px);
+}
+
+.graph-controls button.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+/* Slide-in stats sheet — orphans / hubs / dead-ends, hidden by default and
+ * toggled via the 📋 Stats button so the canvas keeps the full viewport. */
+.graph-stats-sheet {
+  position: fixed;
+  top: 50px;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 92vw);
+  background: var(--bg-elev);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+  transform: translateX(100%);
+  transition: transform 220ms ease;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  visibility: hidden;
+}
+.graph-stats-sheet.is-open {
+  transform: translateX(0);
+  visibility: visible;
+}
+.graph-stats-sheet > header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  font-size: 1.05em;
+  background: var(--bg);
+}
+.graph-stats-sheet > header button {
+  background: none; border: none; font-size: 1.4em; line-height: 1;
+  color: var(--fg-muted); cursor: pointer; padding: 0 4px;
+}
+.graph-stats-sheet > header button:hover { color: var(--fg); }
+#graph-stats {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 14px 18px;
+}
+#graph-stats h3 {
+  font-size: 0.92em;
+  margin: 16px 0 6px;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+#graph-stats h3:first-child { margin-top: 0; }
+#graph-stats ul {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+#graph-stats li {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9em;
+}
+#graph-stats li:last-child { border-bottom: none; }
+#graph-stats a {
+  display: block;
+  color: var(--fg);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+#graph-stats a:hover { color: var(--accent); }
+
+.graph-stats-backdrop {
+  position: fixed;
+  inset: 50px 0 0 0;
+  background: rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transition: opacity 220ms ease;
+  z-index: 89;
+  pointer-events: none;
+}
+.graph-stats-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (max-width: 1024px) {
+  .graph-page-shell { height: calc(100vh - 80px); }
+}

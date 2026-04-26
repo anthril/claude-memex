@@ -26,6 +26,7 @@ Follow the `ingest-source` skill's full 10-step workflow (`skills/ingest-source/
 - **Read the source(s) completely.** Isolation is the whole point — use the full context budget to read.
 - **When in doubt, prefer a new entity/concept page over expanding an existing one.** The caller can merge later via `doc-refactor` if preferred. Creating more discoverable surface is better than burying content.
 - **Never edit `memex.config.json`.** If the profile needs new top-level folders for this source, flag that in the report as an open question.
+- **Pages you create are immediately visible in the docsite** (if the calling session is running `memex-docsite serve`). Each new page appears at `/<page-slug>/`; new edges land on `/graph` within the 5-second graph-cache TTL; new open-question files surface on `/open-questions`. No restart required.
 
 ## Report back
 

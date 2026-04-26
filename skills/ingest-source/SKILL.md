@@ -119,3 +119,4 @@ Body (optional but recommended):
 - Present the diff summary to the user (files created / updated / touched)
 - Flag anything surprising or that needs their decision
 - If you created any stub pages (entities/concepts mentioned but not yet researched), list them as candidates for future investigation
+- If `memex-docsite serve` is running, the new pages appear at `/<slug>/` immediately and surface in the appropriate `/sections/<type>/` listing (5-second graph cache)

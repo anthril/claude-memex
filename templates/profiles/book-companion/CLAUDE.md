@@ -18,3 +18,7 @@ See [.memex/AGENTS.md](.memex/AGENTS.md). The LLM builds the character/place/the
 - [.memex/README.md](.memex/README.md)
 - [.memex/index.md](.memex/index.md)
 - [.memex/timeline.md](.memex/timeline.md)
+
+## How the docsite shows this wiki
+
+The optional [memex-docsite](https://github.com/anthril/claude-memex/blob/main/docs/docsite.md) reads `memex.config.json#/index.sections` for the sidebar's "Sections" nav, and `frontmatter.enum.type` for the page-type badges (Characters, Places, Themes, Plot Threads, Chapter Summaries). Run `memex-docsite serve` (after `pip install -e ".[docsite]"`) to browse this companion locally.

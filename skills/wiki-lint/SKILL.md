@@ -33,6 +33,8 @@ Produces a structured findings report. Each finding has a severity (`info`, `war
 - Note pages with zero inbound links (orphans) → `warn`
 - Note pages with a single inbound from the index (otherwise orphan) → `info`
 
+> **Cross-check against the docsite.** When `memex-docsite serve` is running locally, `GET /api/graph` returns the same orphan / hub / dead-end sets — built from the same wikilink regex. Diverging answers usually mean the lint scope and the docsite's `is_ignored` patterns disagree.
+
 ## 4. Scan for contradictions
 
 - Pages that mention the same entity with different `status:`, `category:`, or framework field values → `warn` (surface both and let the user decide)

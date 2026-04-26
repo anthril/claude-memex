@@ -30,6 +30,7 @@ from . import auth as auth_module
 from . import comments as comments_module
 from . import graph as graph_module
 from . import renderer, resolver, search, sitetree, submissions
+from . import sections as sections_module
 from .config import DocsiteConfig
 
 PACKAGE_DIR = Path(__file__).parent
@@ -42,15 +43,47 @@ def _redirect_after_post(url: str) -> RedirectResponse:
     return RedirectResponse(url=url, status_code=303)
 
 
+async def _read_string_form(request: Request) -> dict[str, str]:
+    """Coerce a Starlette form payload to `dict[str, str]`.
+
+    Starlette types the form values as `UploadFile | str`. The docsite's
+    submission/comment/annotation surfaces are text-only, so any
+    `UploadFile` value is dropped (and would have failed validation anyway).
+    """
+    raw = await request.form()
+    out: dict[str, str] = {}
+    for key, value in raw.multi_items():
+        if isinstance(value, str):
+            out[key] = value
+    return out
+
+
 def _open_questions_list_response(cfg: DocsiteConfig, env: Environment) -> HTMLResponse:
+    import json as _json
+
     items = submissions.list_open_questions(cfg)
     active = [i for i in items if not i["resolved"]]
     resolved = [i for i in items if i["resolved"]]
+    # Oldest pending first (so the long-stalled ones surface), most recently
+    # resolved first (so users see what just landed).
+    active.sort(key=lambda i: i.get("created") or "")
+    resolved.sort(key=lambda i: i.get("resolved_on") or "", reverse=True)
+    # Surface the hook-bus inline-TODO findings if `stop-open-questions-check.py`
+    # has dropped a state file. Best-effort — missing or malformed file == empty.
+    inline_todos: list[dict] = []
+    state_path = cfg.memex_root / ".state" / "inline-todos.json"
+    if state_path.is_file():
+        try:
+            payload = _json.loads(state_path.read_text(encoding="utf-8"))
+            inline_todos = list(payload.get("findings") or [])
+        except (OSError, ValueError):
+            inline_todos = []
     return _render_template(
         env,
         "open-questions/list.html",
         active=active,
         resolved=resolved,
+        inline_todos=inline_todos,
         current_slug="open-questions",
         write_enabled=cfg.write_enabled("open-questions"),
         breadcrumbs=_breadcrumbs("open-questions"),
@@ -70,6 +103,54 @@ def _rules_list_response(cfg: DocsiteConfig, env: Environment) -> HTMLResponse:
         breadcrumbs=_breadcrumbs("rules"),
         backlinks=[],
         **_shared_context(cfg),
+    )
+
+
+def _sections_overview_response(
+    cfg: DocsiteConfig, env: Environment, *, graph: graph_module.Graph | None = None
+) -> HTMLResponse:
+    if graph is None:
+        graph = cached_graph_for(cfg)
+    sections = sections_module.build_sections(cfg, graph)
+    return _render_template(
+        env,
+        "sections/list.html",
+        sections=sections,
+        current_slug="sections",
+        breadcrumbs=_breadcrumbs("sections"),
+        backlinks=[],
+        **_shared_context(cfg, graph=graph),
+    )
+
+
+def _section_detail_response(
+    cfg: DocsiteConfig,
+    env: Environment,
+    type_slug: str,
+    *,
+    graph: graph_module.Graph | None = None,
+) -> HTMLResponse:
+    if graph is None:
+        graph = cached_graph_for(cfg)
+    sections = sections_module.build_sections(cfg, graph)
+    match = next((s for s in sections if s.slug == type_slug), None)
+    if match is None:
+        raise HTTPException(404)
+    return _render_template(
+        env,
+        "sections/section.html",
+        section=match,
+        slug_to_url=resolver.slug_to_url,
+        type_display_name=sections_module.display_name_for_type(
+            cfg, match.type_values[0] if match.type_values else None
+        ),
+        current_slug=f"sections/{type_slug}",
+        breadcrumbs=[
+            {"label": "Home", "url": "/"},
+            {"label": "Sections", "url": "/sections"},
+        ],
+        backlinks=[],
+        **_shared_context(cfg, graph=graph),
     )
 
 
@@ -127,11 +208,36 @@ def _render_template(env: Environment, name: str, **ctx: Any) -> HTMLResponse:
     return HTMLResponse(template.render(**ctx))
 
 
-def _shared_context(cfg: DocsiteConfig) -> dict[str, Any]:
+def _shared_context(
+    cfg: DocsiteConfig,
+    *,
+    graph: graph_module.Graph | None = None,
+) -> dict[str, Any]:
     tree = sitetree.build(
         cfg.wiki_root, show_hidden=cfg.show_hidden, is_ignored=cfg.is_ignored
     )
     search_engine = (cfg.raw_config.get("search") or {}).get("engine", "grep")
+    open_questions_count = sum(
+        1 for q in submissions.list_open_questions(cfg) if not q["resolved"]
+    )
+    # Section summaries for the sidebar nav. Only computed when the profile
+    # actually defines sections — keeps generic-profile wikis from rendering
+    # an empty group. Reuses the per-cfg cached graph (5-second TTL) so list
+    # pages don't pay a fresh wiki walk on every render.
+    section_summaries: list[dict[str, Any]] = []
+    if cfg.index_sections or cfg.type_enum:
+        local_graph = graph if graph is not None else cached_graph_for(cfg)
+        for s in sections_module.build_sections(cfg, local_graph):
+            # Hide synthetic sections (auto-appended for unmapped enum types,
+            # plus the Uncategorised bucket) when they have no pages — keeps
+            # the sidebar tight for wikis whose enum is wider than their
+            # actual content. User-declared sections always render so empty
+            # ones still hint "this section exists, file something here".
+            if s.is_synthetic and s.count == 0:
+                continue
+            section_summaries.append(
+                {"label": s.label, "slug": s.slug, "count": s.count}
+            )
     return {
         "site_title": cfg.title,
         "theme": cfg.theme,
@@ -140,6 +246,8 @@ def _shared_context(cfg: DocsiteConfig) -> dict[str, Any]:
         "write_features": list(cfg.write_features),
         "tree": tree,
         "search_engine": search_engine,
+        "open_questions_count": open_questions_count,
+        "nav_sections": section_summaries,
     }
 
 
@@ -181,7 +289,10 @@ def _page_response(
         current_slug=slug,
         breadcrumbs=_breadcrumbs(slug),
         backlinks=backlinks,
-        **_shared_context(cfg),
+        page_type_display=sections_module.display_name_for_type(
+            cfg, (page.frontmatter or {}).get("type")
+        ),
+        **_shared_context(cfg, graph=graph),
     )
 
 
@@ -225,27 +336,39 @@ def _folder_response(cfg: DocsiteConfig, env: Environment, slug: str, folder: Pa
 
 _GRAPH_TTL_SECONDS = 5.0
 
+# Per-cfg link-graph cache, shared between the make_app closures and the
+# stateless `_*_response` helpers (which `_shared_context` also routes
+# through). Keyed by `id(cfg)` because DocsiteConfig is a slotted dataclass
+# (no place to attach state) and cfg lives for the app's lifetime. The
+# cache TTL is short, so missing eviction (id reuse after gc) is harmless.
+_GRAPH_CACHE: dict[int, dict[str, Any]] = {}
+
+
+def cached_graph_for(cfg: DocsiteConfig) -> graph_module.Graph:
+    """Return the cached link graph for `cfg`, rebuilding if stale."""
+    import time
+
+    key = id(cfg)
+    entry = _GRAPH_CACHE.get(key)
+    now = time.monotonic()
+    if entry is None or now - entry["at"] > _GRAPH_TTL_SECONDS:
+        entry = {
+            "at": now,
+            "graph": graph_module.build(
+                cfg.wiki_root,
+                show_hidden=cfg.show_hidden,
+                is_ignored=cfg.is_ignored,
+            ),
+        }
+        _GRAPH_CACHE[key] = entry
+    return entry["graph"]
+
 
 def make_app(cfg: DocsiteConfig) -> Starlette:
     env = _make_env()
-    # Per-app graph cache — saves rebuilding the link graph on every page
-    # render. `time.monotonic` is used so a system clock change can't poison
-    # the cache.
-    import time
 
-    graph_cache = {"at": -1.0, "graph": None}
-
-    def cached_graph():
-        now = time.monotonic()
-        if (
-            graph_cache["graph"] is None
-            or now - graph_cache["at"] > _GRAPH_TTL_SECONDS
-        ):
-            graph_cache["graph"] = graph_module.build(
-                cfg.wiki_root, show_hidden=cfg.show_hidden, is_ignored=cfg.is_ignored
-            )
-            graph_cache["at"] = now
-        return graph_cache["graph"]
+    def cached_graph() -> graph_module.Graph:
+        return cached_graph_for(cfg)
 
     async def index(request: Request) -> Response:
         return _page_response(cfg, env, "index", graph=cached_graph())
@@ -299,11 +422,18 @@ def make_app(cfg: DocsiteConfig) -> Starlette:
             env,
             "graph.html",
             current_slug="graph",
-            **_shared_context(cfg),
+            **_shared_context(cfg, graph=cached_graph()),
         )
 
     async def graph_json(request: Request) -> Response:
         return JSONResponse(graph_module.to_dict(cached_graph()))
+
+    async def sections_overview(request: Request) -> Response:
+        return _sections_overview_response(cfg, env, graph=cached_graph())
+
+    async def section_detail(request: Request) -> Response:
+        type_slug = request.path_params["type_slug"].strip("/")
+        return _section_detail_response(cfg, env, type_slug, graph=cached_graph())
 
     # ─── Phase 3: open-questions + rules submission ──────────────────────────
 
@@ -325,7 +455,7 @@ def make_app(cfg: DocsiteConfig) -> Starlette:
     async def open_questions_submit(request: Request) -> Response:
         if not cfg.write_enabled("open-questions"):
             raise HTTPException(404)
-        form = dict(await request.form())
+        form = await _read_string_form(request)
         try:
             identity = auth_module.require_write_identity(request, cfg, form=form)
         except HTTPException:
@@ -365,7 +495,7 @@ def make_app(cfg: DocsiteConfig) -> Starlette:
         if not cfg.write_enabled("open-questions"):
             raise HTTPException(404)
         slug = request.path_params["slug"]
-        form = dict(await request.form())
+        form = await _read_string_form(request)
         identity = auth_module.require_write_identity(request, cfg, form=form)
         try:
             submissions.resolve_open_question(cfg, slug, resolver=identity.name)
@@ -391,7 +521,7 @@ def make_app(cfg: DocsiteConfig) -> Starlette:
     async def rules_submit(request: Request) -> Response:
         if not cfg.write_enabled("rules"):
             raise HTTPException(404)
-        form = dict(await request.form())
+        form = await _read_string_form(request)
         identity = auth_module.require_write_identity(request, cfg, form=form)
         title = (form.get("title") or "").strip()
         body = (form.get("body") or "").strip()
@@ -627,7 +757,7 @@ def make_app(cfg: DocsiteConfig) -> Starlette:
             return JSONResponse({"error": str(exc)}, status_code=status)
         return JSONResponse({"status": "deleted"})
 
-    async def not_found(request: Request, exc: HTTPException) -> Response:
+    async def not_found(request: Request, exc: Exception) -> Response:
         template = env.get_template("404.html")
         body = template.render(
             current_slug=request.url.path.lstrip("/"),
@@ -697,6 +827,11 @@ def make_app(cfg: DocsiteConfig) -> Starlette:
             comments_create,
             methods=["POST"],
         ),
+        # Profile-driven sections nav (must precede the catch-all so a wiki
+        # with a real top-level `sections/` folder is a documented edge-case;
+        # rename or omit it to avoid collision).
+        Route("/sections", sections_overview, methods=["GET"]),
+        Route("/sections/{type_slug}", section_detail, methods=["GET"]),
         Mount("/static", app=StaticFiles(directory=str(STATIC_DIR)), name="static"),
         Route("/raw/{path:path}", raw_asset),
         Route("/{slug:path}", page),

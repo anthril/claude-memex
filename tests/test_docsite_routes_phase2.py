@@ -65,3 +65,26 @@ def test_graph_json(research_wiki_project: Path):
         payload = r.json()
         assert "nodes" in payload and "edges" in payload and "summary" in payload
         assert payload["summary"]["node_count"] == len(payload["nodes"])
+
+
+def test_sections_overview_renders(research_wiki_project: Path):
+    with _client(research_wiki_project) as client:
+        r = client.get("/sections")
+        assert r.status_code == 200
+        # research-wiki defines an Entities section.
+        assert "Sections" in r.text
+        assert "Entities" in r.text
+
+
+def test_section_detail_renders(research_wiki_project: Path):
+    with _client(research_wiki_project) as client:
+        r = client.get("/sections/entities")
+        assert r.status_code == 200
+        # The empty-state copy includes the type code; check we got the section page.
+        assert "Entities" in r.text
+
+
+def test_section_detail_404_for_unknown_slug(research_wiki_project: Path):
+    with _client(research_wiki_project) as client:
+        r = client.get("/sections/does-not-exist")
+        assert r.status_code == 404

@@ -121,3 +121,47 @@ def test_list_rules_returns_summaries(research_wiki_project: Path):
     titles = {r["title"] for r in rules}
     assert {"One", "Two"} <= titles
     assert all(r.get("url") for r in rules)
+
+
+def test_inline_status_resolved_counts_as_resolved(research_wiki_project: Path):
+    """A page with `status: resolved` in its frontmatter must show up in the
+    resolved bucket even though it still lives in `.open-questions/` (not
+    yet moved to `.resolved/`). This is the bug T2 fixes — the previous
+    implementation hard-coded resolution from folder location only."""
+    cfg = cfg_mod.load(start=research_wiki_project)
+    folder = cfg.memex_root / submissions.OPEN_QUESTIONS_DIR
+    folder.mkdir(parents=True, exist_ok=True)
+    inline = folder / "inline-resolved.md"
+    inline.write_text(
+        "---\n"
+        "title: Already answered\n"
+        "slug: inline-resolved\n"
+        "type: open-question\n"
+        "status: resolved\n"
+        "resolved-on: '2026-04-20'\n"
+        "resolved-by: alice\n"
+        "created: '2026-04-01T00:00:00Z'\n"
+        "updated: '2026-04-20T00:00:00Z'\n"
+        "owner: alice\n"
+        "---\nbody\n",
+        encoding="utf-8",
+    )
+    items = submissions.list_open_questions(cfg)
+    inline_item = next(i for i in items if i["slug"] == "inline-resolved")
+    assert inline_item["resolved"] is True
+    assert inline_item["status"] == "resolved"
+    assert inline_item["resolved_on"] == "2026-04-20"
+    assert inline_item["resolved_by"] == "alice"
+
+
+def test_is_resolved_helper_handles_both_conventions():
+    """`is_resolved` must accept both the inline frontmatter convention and
+    the `.resolved/` folder convention, and return False otherwise."""
+    p = Path(".open-questions/foo.md")
+    assert submissions.is_resolved(p, {"status": "resolved"}) is True
+    assert submissions.is_resolved(p, {"status": "Resolved"}) is True
+    assert submissions.is_resolved(p, {"status": "open"}) is False
+    assert submissions.is_resolved(p, None) is False
+    p2 = Path(".open-questions/.resolved/foo.md")
+    assert submissions.is_resolved(p2, None) is True
+    assert submissions.is_resolved(p2, {"status": "open"}) is True

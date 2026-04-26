@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+from . import wiki_log
 from .config import DocsiteConfig
 
 COMMENTS_DIR = ".comments"
@@ -74,14 +75,14 @@ def comments_path(cfg: DocsiteConfig, page_slug: str) -> Path:
     """
     safe = _safe_slug(page_slug)
     flat = safe.replace("/", "__")
-    return cfg.wiki_root / COMMENTS_DIR / f"{flat}.jsonl"
+    return cfg.memex_root / COMMENTS_DIR / f"{flat}.jsonl"
 
 
 def _validate_visibility(value: object | None, default: Visibility) -> Visibility:
     if value is None:
         return default
     if value in VALID_VISIBILITIES:
-        return value  # type: ignore[return-value]
+        return value
     raise CommentError(
         f"visibility must be one of {VALID_VISIBILITIES}, got {value!r}"
     )
@@ -190,6 +191,11 @@ def add_comment(
         "status": "active",
     }
     _append_record(path, record)
+    wiki_log.append_entry(
+        cfg,
+        event="comment",
+        subject=f"{page_slug} (by {author})",
+    )
     return record
 
 
@@ -243,7 +249,7 @@ def list_recent_across_pages(
     Each returned record is augmented with `page` (the un-flattened page
     slug) and a stable `url` to the page itself.
     """
-    folder = cfg.wiki_root / COMMENTS_DIR
+    folder = cfg.memex_root / COMMENTS_DIR
     if not folder.is_dir():
         return []
     out: list[dict] = []

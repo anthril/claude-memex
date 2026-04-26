@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Sections — {{ site_title }}{% endblock %}
+
+{% block content %}
+<article class="page">
+  <header class="page-header">
+    <h1>Sections</h1>
+    <span class="badge badge-type">overview</span>
+  </header>
+
+  <p class="page-meta">
+    Sections are derived from your profile's <code>index.sections</code> in
+    <code>memex.config.json</code>. Each section groups pages by their
+    <code>frontmatter.type</code> value.
+  </p>
+
+  {% if sections %}
+    <ul class="folder-listing">
+      {% for s in sections %}
+        <li>
+          <a href="/sections/{{ s.slug }}"><strong>{{ s.label }}</strong></a>
+          <span class="entry-meta">
+            {{ s.count }} page{{ '' if s.count == 1 else 's' }}
+            {% if s.type_values %}
+              · type{{ '' if s.type_values | length == 1 else 's' }}
+              {% for t in s.type_values %}
+                <code>{{ t }}</code>{% if not loop.last %}, {% endif %}
+              {% endfor %}
+            {% endif %}
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">
+      This profile defines no sections. Add an <code>index.sections</code>
+      block to your <code>memex.config.json</code> to surface them here.
+    </p>
+  {% endif %}
+</article>
+{% endblock %}

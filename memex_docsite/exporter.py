@@ -29,14 +29,17 @@ class ExportResult:
 def export(cfg: DocsiteConfig, *, out_dir: Path | None = None) -> ExportResult:
     """Render the entire wiki to a static directory."""
     # Imports done lazily so the exporter stays usable without all server deps.
+    from . import sections as sections_module
     from . import server  # noqa: F401  (re-uses Jinja env via private helpers)
-    from .server import (  # type: ignore[attr-defined]
+    from .server import (
         _comments_overview_response,
         _folder_response,
         _make_env,
         _open_questions_list_response,
         _page_response,
         _rules_list_response,
+        _section_detail_response,
+        _sections_overview_response,
     )
 
     static_cfg = _StaticDocsiteConfig.from_runtime(cfg)
@@ -44,6 +47,20 @@ def export(cfg: DocsiteConfig, *, out_dir: Path | None = None) -> ExportResult:
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
+
+    # Auto-protect against recursion: when `out` lives inside the wiki root
+    # (a common shape when contentRoot=".") we'd walk our own freshly-written
+    # output on the next pass. Wrap the project's `is_ignored` so anything
+    # under `out` is also rejected, then mutate the cfg's ignore_patterns.
+    out_resolved = out.resolve()
+    wiki_resolved = cfg.wiki_root.resolve()
+    try:
+        out_rel = out_resolved.relative_to(wiki_resolved).as_posix()
+        # Slug paths use POSIX separators; `<out_rel>/**` covers everything inside.
+        extra = [out_rel, f"{out_rel}/**"]
+        static_cfg.ignore_patterns = [*static_cfg.ignore_patterns, *extra]
+    except ValueError:
+        pass  # `out` lives outside the wiki — no recursion risk.
 
     env = _make_env()
     result = ExportResult()
@@ -56,15 +73,17 @@ def export(cfg: DocsiteConfig, *, out_dir: Path | None = None) -> ExportResult:
 
     # Build the graph once for the whole export so backlinks resolve consistently.
     graph = graph_module.build(
-        cfg.wiki_root, show_hidden=cfg.show_hidden, is_ignored=cfg.is_ignored
+        cfg.wiki_root,
+        show_hidden=static_cfg.show_hidden,
+        is_ignored=static_cfg.is_ignored,
     )
 
     # Render every markdown file.
     for md_path in sorted(cfg.wiki_root.rglob("*.md")):
         rel = md_path.relative_to(cfg.wiki_root)
-        if not cfg.show_hidden and any(p.startswith(".") for p in rel.parts):
+        if not static_cfg.show_hidden and any(p.startswith(".") for p in rel.parts):
             continue
-        if cfg.is_ignored(rel.as_posix()):
+        if static_cfg.is_ignored(rel.as_posix()):
             continue
         slug = resolver.path_to_slug(md_path, cfg.wiki_root)
         response = _page_response(static_cfg, env, slug, graph=graph)
@@ -74,9 +93,11 @@ def export(cfg: DocsiteConfig, *, out_dir: Path | None = None) -> ExportResult:
     # Auto-generated folder indexes (where no index.md exists).
     for folder in sorted(p for p in cfg.wiki_root.rglob("*") if p.is_dir()):
         rel = folder.relative_to(cfg.wiki_root)
-        if not cfg.show_hidden and any(p.startswith(".") for p in rel.parts):
+        if not static_cfg.show_hidden and any(p.startswith(".") for p in rel.parts):
             continue
-        if cfg.is_ignored(rel.as_posix() + "/"):
+        if static_cfg.is_ignored(rel.as_posix()) or static_cfg.is_ignored(
+            rel.as_posix() + "/"
+        ):
             continue
         slug = "/".join(rel.parts)
         if not slug:
@@ -98,6 +119,17 @@ def export(cfg: DocsiteConfig, *, out_dir: Path | None = None) -> ExportResult:
         response = render(static_cfg, env)
         _write_html(out, f"{slug}/index", response.body)
         result.list_pages_written += 1
+
+    # Profile-driven sections nav. Skipped entirely when the profile
+    # doesn't define `index.sections` or `frontmatter.enum.type`.
+    if static_cfg.index_sections or static_cfg.type_enum:
+        overview = _sections_overview_response(static_cfg, env, graph=graph)
+        _write_html(out, "sections/index", overview.body)
+        result.list_pages_written += 1
+        for s in sections_module.build_sections(static_cfg, graph):
+            detail = _section_detail_response(static_cfg, env, s.slug, graph=graph)
+            _write_html(out, f"sections/{s.slug}/index", detail.body)
+            result.list_pages_written += 1
 
     # Copy raw assets so /raw/<path> URLs continue to resolve.
     raw_src = cfg.wiki_root / "raw"
@@ -129,5 +161,5 @@ class _StaticDocsiteConfig(DocsiteConfig):
         return cls(**kwargs)
 
     @property
-    def static_mode(self) -> bool:  # type: ignore[override]
+    def static_mode(self) -> bool:
         return True

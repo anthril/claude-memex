@@ -18,7 +18,7 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     if args.host:
         cfg.host = args.host
     if args.auth:
-        cfg.auth = args.auth  # type: ignore[assignment]
+        cfg.auth = args.auth
     try:
         import uvicorn
     except ImportError:  # pragma: no cover - install-time guard

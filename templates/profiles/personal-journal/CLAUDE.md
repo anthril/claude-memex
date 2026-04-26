@@ -10,3 +10,7 @@ See [.memex/AGENTS.md](.memex/AGENTS.md). Key rule: summarise, cross-reference, 
 
 - [.memex/README.md](.memex/README.md)
 - [.memex/index.md](.memex/index.md)
+
+## How the docsite shows this wiki
+
+The optional [memex-docsite](https://github.com/anthril/claude-memex/blob/main/docs/docsite.md) reads `memex.config.json#/index.sections` for the sidebar's "Sections" nav, and `frontmatter.enum.type` for the page-type badges. Edit the JSON to rename a section. Keep the docsite local-only (do not expose) — this profile is private. Run `memex-docsite serve --host 127.0.0.1` (after `pip install -e ".[docsite]"`).

@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from . import frontmatter
+from . import frontmatter, wiki_log
 from .config import DocsiteConfig
 
 ANNOTATIONS_DIR = ".annotations"
@@ -61,7 +61,7 @@ def _safe_page_slug(page_slug: str) -> str:
 
 
 def annotation_dir(cfg: DocsiteConfig, page_slug: str) -> Path:
-    return cfg.wiki_root / ANNOTATIONS_DIR / _safe_page_slug(page_slug)
+    return cfg.memex_root / ANNOTATIONS_DIR / _safe_page_slug(page_slug)
 
 
 def _validate_selector(selector: dict | None) -> dict:
@@ -98,7 +98,7 @@ def _validate_visibility(value: object | None, default: Visibility) -> Visibilit
     if value is None:
         return default
     if value in VALID_VISIBILITIES:
-        return value  # type: ignore[return-value]
+        return value
     raise AnnotationError(
         f"visibility must be one of {VALID_VISIBILITIES}, got {value!r}"
     )
@@ -148,7 +148,7 @@ def create_annotation(
     replies_to: str | None = None,
 ) -> WriteResult:
     safe_slug = _safe_page_slug(page_slug)
-    folder = (cfg.wiki_root / ANNOTATIONS_DIR / safe_slug)
+    folder = (cfg.memex_root / ANNOTATIONS_DIR / safe_slug)
     folder.mkdir(parents=True, exist_ok=True)
     if cfg.annotations.allow_anonymous is False and author == "anonymous":
         raise AnnotationError("anonymous annotations are disabled")
@@ -188,6 +188,11 @@ def create_annotation(
 
     target = folder / f"{ann_id}.md"
     target.write_text(content, encoding="utf-8")
+    wiki_log.append_entry(
+        cfg,
+        event="annotation",
+        subject=f"{safe_slug} (by {author})",
+    )
     record = _summarise(target, fm)
     return WriteResult(path=target, record=record)
 

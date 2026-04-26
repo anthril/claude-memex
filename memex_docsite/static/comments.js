@@ -30,14 +30,17 @@ async function render() {
 
   container.innerHTML = "";
   const heading = document.createElement("h2");
-  heading.textContent = `Comments (${records.filter((r) => r.status !== "deleted").length})`;
+  const count = records.filter((r) => r.status !== "deleted").length;
+  heading.innerHTML = `<span aria-hidden="true">💬</span> Comments <span class="comment-count">(${count})</span>`;
   container.appendChild(heading);
 
   const topLevel = records.filter((r) => !r.replies_to);
   if (topLevel.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty";
-    empty.textContent = "No comments yet.";
+    empty.textContent = writeEnabled
+      ? "No comments yet. Be the first to share a thought."
+      : "No comments yet.";
     container.appendChild(empty);
   }
   for (const root of topLevel) {
@@ -78,24 +81,36 @@ function renderCard(rec, opts = {}) {
 function buildNewCommentForm(replyTo) {
   const form = document.createElement("form");
   form.className = replyTo ? "memex-comment-reply-form" : "memex-comment-new-form";
-  const placeholder = replyTo ? "Reply…" : "Add a comment (markdown supported)";
+  const placeholder = replyTo
+    ? "Write a reply (markdown supported)…"
+    : "Share your thoughts (markdown supported)…";
   const visibilityRow = replyTo ? "" : `
     <label class="visibility-row">
       <span>Visibility</span>
       <select name="visibility">
-        <option value="public">Public</option>
-        <option value="group">Group (authenticated)</option>
-        <option value="private">Private (only me)</option>
+        <option value="public">Public — visible to all readers</option>
+        <option value="group">Group — authenticated users only</option>
+        <option value="private">Private — only me</option>
       </select>
     </label>
   `;
+  const submitLabel = replyTo ? "Post reply" : "Post comment";
+  const cancelButton = replyTo
+    ? `<button type="button" class="cancel-reply">Cancel</button>`
+    : "";
   form.innerHTML = `
-    <textarea name="body" rows="${replyTo ? 2 : 4}" placeholder="${placeholder}" required></textarea>
+    <textarea name="body" rows="${replyTo ? 3 : 4}" placeholder="${placeholder}" required></textarea>
     ${visibilityRow}
     <div class="form-actions">
-      <button type="submit">${replyTo ? "Reply" : "Post"}</button>
+      <button type="submit">${submitLabel}</button>
+      ${cancelButton}
     </div>
   `;
+  if (replyTo) {
+    form.querySelector(".cancel-reply").addEventListener("click", () => {
+      form.querySelector("textarea").value = "";
+    });
+  }
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const body = form.querySelector("textarea").value.trim();

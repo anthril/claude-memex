@@ -34,6 +34,29 @@ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () 
   if ((localStorage.getItem(STORAGE_KEY) || "auto") === "auto") applyTheme("auto");
 });
 
+// Sidebar collapse / expand all.
+const sidebarTreeActions = document.querySelectorAll("[data-tree-action]");
+for (const button of sidebarTreeActions) {
+  button.addEventListener("click", () => {
+    const action = button.dataset.treeAction;
+    const details = document.querySelectorAll(".tree details");
+    for (const d of details) {
+      d.open = action === "expand";
+    }
+    // Persist the choice for the session so navigating doesn't undo it.
+    try {
+      sessionStorage.setItem("memex-tree-action", action);
+    } catch { /* storage may be disabled */ }
+  });
+}
+// On page load, replay the most-recent collapse/expand intent.
+try {
+  const remembered = sessionStorage.getItem("memex-tree-action");
+  if (remembered === "collapse") {
+    for (const d of document.querySelectorAll(".tree details")) d.open = false;
+  }
+} catch { /* ignore */ }
+
 // Mobile sidebar toggle.
 const shell = document.querySelector(".site-shell");
 const sidebarToggle = document.getElementById("sidebar-toggle");

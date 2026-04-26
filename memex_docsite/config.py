@@ -40,7 +40,15 @@ class DocsiteConfig:
 
     project_root: Path = field(default=Path("."))
     wiki_root: Path = field(default=Path("."))
+    memex_root: Path = field(default=Path("."))
     raw_config: dict = field(default_factory=dict)
+
+    # Profile-derived nav inputs. Populated from `index.sections` and
+    # `frontmatter.enum.type` so the docsite can render a section-driven
+    # sidebar without re-parsing the raw config in every template.
+    index_sections: list = field(default_factory=list)
+    type_enum: list[str] = field(default_factory=list)
+    enum_display_names: dict = field(default_factory=dict)
 
     def is_ignored(self, rel_path: str) -> bool:
         """Match a path (POSIX, relative to wiki_root) against ignorePatterns."""
@@ -65,6 +73,23 @@ class DocsiteConfig:
 
     def write_enabled(self, feature: WriteFeature) -> bool:
         return self.enabled and not self.static_mode and feature in self.write_features
+
+
+# Patterns the docsite always ignores even if the user doesn't list them.
+# `.state/sessions/**` are PreCompact session snapshots written by the hook
+# bus and are noise in the docsite's nav. Explicit user patterns are merged
+# on top so a project can still un-ignore them with care.
+_DEFAULT_IGNORE_PATTERNS: tuple[str, ...] = (
+    ".state/sessions/**",
+)
+
+
+def _with_default_ignores(user_patterns: list[str]) -> list[str]:
+    out = list(_DEFAULT_IGNORE_PATTERNS)
+    for p in user_patterns:
+        if p not in out:
+            out.append(p)
+    return out
 
 
 def _coerce(raw: dict | None, key: str, default, expected_type=None):
@@ -92,6 +117,11 @@ def load(start: Path | None = None) -> DocsiteConfig:
         indexable=_coerce(annotations_raw, "indexable", False, bool),
     )
 
+    # The canonical memex root — always `.memex/` per the raw config. All
+    # docsite writes (open-questions, rules, annotations, comments) land
+    # here regardless of how wide `contentRoot` reaches for reads.
+    canonical_memex = wiki_root(root, raw)
+
     # docsite.contentRoot lets a project surface a wider tree than `.memex/`
     # without disturbing the hook contract (hooks keep reading `cfg["root"]`
     # from the raw JSON). Default: the canonical `.memex/` wiki root.
@@ -101,7 +131,14 @@ def load(start: Path | None = None) -> DocsiteConfig:
             raise ValueError("docsite.contentRoot must be a string path")
         effective_root = (root / content_override).resolve()
     else:
-        effective_root = wiki_root(root, raw)
+        effective_root = canonical_memex
+
+    index_raw = raw.get("index") or {}
+    index_sections = list(index_raw.get("sections") or [])
+
+    fm_raw = raw.get("frontmatter") or {}
+    type_enum = list((fm_raw.get("enum") or {}).get("type") or [])
+    enum_display_names = dict(fm_raw.get("enumDisplayNames") or {})
 
     cfg = DocsiteConfig(
         enabled=_coerce(docsite_raw, "enabled", True, bool),
@@ -113,11 +150,17 @@ def load(start: Path | None = None) -> DocsiteConfig:
         show_hidden=_coerce(docsite_raw, "showHidden", True, bool),
         write_features=list(_coerce(docsite_raw, "writeFeatures", [], list)),
         export_path=_coerce(docsite_raw, "exportPath", "dist/", str),
-        ignore_patterns=list(_coerce(docsite_raw, "ignorePatterns", [], list)),
+        ignore_patterns=_with_default_ignores(
+            list(_coerce(docsite_raw, "ignorePatterns", [], list))
+        ),
         annotations=annotations,
         project_root=root,
         wiki_root=effective_root,
+        memex_root=canonical_memex,
         raw_config=raw,
+        index_sections=index_sections,
+        type_enum=type_enum,
+        enum_display_names=enum_display_names,
     )
 
     if cfg.auth not in ("none", "token", "proxy"):

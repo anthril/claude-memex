@@ -14,7 +14,7 @@
       <span class="badge badge-status badge-{{ page.frontmatter.status }}">{{ page.frontmatter.status }}</span>
     {% endif %}
     {% if page.frontmatter.type %}
-      <span class="badge badge-type">{{ page.frontmatter.type }}</span>
+      <span class="badge badge-type badge-type-{{ page.frontmatter.type }}">{{ page_type_display or page.frontmatter.type }}</span>
     {% endif %}
     {% if annotations_enabled and not annotations_disabled_for_page %}
       <button id="annotation-new-button" type="button" class="site-action" title="New annotation">📝</button>

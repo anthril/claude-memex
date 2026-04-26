@@ -135,10 +135,13 @@ def render(content: str, source_slug: str, wiki_root: Path) -> RenderedPage:
         or source_slug.rsplit("/", 1)[-1].replace("-", " ").title()
     )
 
+    # mistune's Markdown.__call__ is typed `str | list[dict[...]]` because it
+    # supports a renderer-less mode. We always pass an HTMLRenderer so the
+    # return is a string in practice.
     return RenderedPage(
         slug=source_slug,
         title=str(title),
-        html=html,
+        html=html if isinstance(html, str) else "",
         frontmatter=fm,
         headings=headings,
         broken_links=broken,

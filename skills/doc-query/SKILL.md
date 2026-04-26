@@ -23,6 +23,8 @@ allowed-tools: Read, Write, Grep, Glob, Bash
 - Otherwise, use `Grep` across the ops root with keywords from the question (drop stopwords)
 - Collect up to 8 candidate pages
 
+> **Note.** The docsite's `GET /search?q=...` endpoint uses the same precedence (qmd → grep). The skill stays grep-based intentionally — it must work without the `[docsite]` extras installed and without a running server.
+
 ## 3. Read
 
 - Read the top candidate pages in full (not chunks)

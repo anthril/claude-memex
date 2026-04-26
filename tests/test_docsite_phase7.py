@@ -188,3 +188,65 @@ def test_static_app_js_includes_scroll_spy_and_shortcut(research_wiki_project: P
         assert ".toc a" in r.text
         # `/` keyboard shortcut targets the search input.
         assert "site-search-input" in r.text
+        # Collapse-all hooks
+        assert "data-tree-action" in r.text
+
+
+def test_sidebar_renders_collapse_expand_buttons(research_wiki_project: Path):
+    with _client(research_wiki_project) as client:
+        r = client.get("/")
+        assert 'data-tree-action="collapse"' in r.text
+        assert 'data-tree-action="expand"' in r.text
+
+
+def test_open_question_count_renders(research_wiki_project: Path, monkeypatch: pytest.MonkeyPatch):
+    """The sidebar shortcut shows a numeric badge when there are active open questions.
+
+    Scoped to the open-questions <a> tag because the profile-driven sections
+    nav also renders `.shortcut-count` badges for non-empty sections.
+    """
+    import json
+    import re
+    cfg_path = research_wiki_project / "memex.config.json"
+    raw = json.loads(cfg_path.read_text())
+    raw["docsite"] = {"writeFeatures": ["open-questions"]}
+    cfg_path.write_text(json.dumps(raw))
+
+    open_q_anchor = re.compile(
+        r'<a href="/open-questions">.*?</a>', flags=re.DOTALL
+    )
+
+    with _client(research_wiki_project) as client:
+        # No badge inside the open-questions anchor before any submissions.
+        r = client.get("/")
+        match = open_q_anchor.search(r.text)
+        assert match, "open-questions sidebar shortcut not found"
+        assert 'shortcut-count' not in match.group(0)
+
+        for title in ("Q one", "Q two", "Q three"):
+            assert client.post(
+                "/open-questions",
+                data={"title": title, "body": "something to discuss"},
+                follow_redirects=False,
+            ).status_code == 303
+
+        r = client.get("/")
+        match = open_q_anchor.search(r.text)
+        assert match, "open-questions sidebar shortcut not found after submissions"
+        assert 'shortcut-count' in match.group(0)
+        assert re.search(r'class="shortcut-count"[^>]*>\s*3\s*<', match.group(0))
+
+
+def test_graph_js_loads_3d_library(research_wiki_project: Path):
+    """The graph page now drives `3d-force-graph` (UMD, vendored) instead of Mermaid."""
+    with _client(research_wiki_project) as client:
+        r = client.get("/static/graph.js")
+        assert r.status_code == 200
+        # 3d-force-graph + 2D fallback are the new globals the script expects.
+        assert "ForceGraph3D" in r.text
+        assert "ForceGraph" in r.text
+    with _client(research_wiki_project) as client:
+        page = client.get("/graph")
+        assert page.status_code == 200
+        assert "3d-force-graph.min.js" in page.text
+        assert "force-graph.min.js" in page.text

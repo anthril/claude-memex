@@ -11,6 +11,24 @@
     {% endif %}
   </header>
 
+  {% if inline_todos %}
+    <aside class="inline-todos-banner">
+      <strong>Inline TODOs ({{ inline_todos | length }})</strong>
+      <p>Markers spotted by the <code>stop-open-questions-check</code> hook in
+      session-edited pages. Promote each to <code>.open-questions/&lt;slug&gt;.md</code>
+      or to a scoped <code>## Open questions</code> section on the owning page.</p>
+      <ul>
+        {% for t in inline_todos[:25] %}
+          <li><code>{{ t.path }}:{{ t.line }}</code> — {{ t.text }}</li>
+        {% endfor %}
+        {% if inline_todos | length > 25 %}
+          <li class="page-meta">… and {{ inline_todos | length - 25 }} more in
+          <code>.state/inline-todos.json</code>.</li>
+        {% endif %}
+      </ul>
+    </aside>
+  {% endif %}
+
   <section class="open-questions">
     <h2>Active <span class="page-meta">({{ active | length }})</span></h2>
     {% if active %}
@@ -49,9 +67,12 @@
             {% else %}
               <span class="entry-title">{{ item.title }}</span>
             {% endif %}
+            <span class="badge badge-status badge-resolved">resolved</span>
             <span class="entry-meta">
               {% if item.owner %}<span>{{ item.owner }}</span>{% endif %}
-              {% if item.created %}<time>{{ item.created }}</time>{% endif %}
+              {% if item.created %}<time>created {{ item.created }}</time>{% endif %}
+              {% if item.resolved_on %}<time>resolved {{ item.resolved_on }}</time>{% endif %}
+              {% if item.resolved_by %}<span>by {{ item.resolved_by }}</span>{% endif %}
             </span>
             {% if item.body_preview %}<p class="entry-preview">{{ item.body_preview }}</p>{% endif %}
           </li>

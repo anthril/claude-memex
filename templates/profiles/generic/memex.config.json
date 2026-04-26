@@ -26,6 +26,7 @@
     "appliesTo": ["**/README.md", "**/AGENTS.md"],
     "required": ["title", "slug", "type", "status", "created", "updated"],
     "enum": {
+      "type": ["topic", "open-question", "rule"],
       "status": ["draft", "active", "deprecated"]
     }
   },

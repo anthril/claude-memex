@@ -4,6 +4,8 @@ A self-hosted browsable HTML view over a memex wiki. Ships in claude-memex
 as an **optional dependency group**: hooks remain stdlib-only, the docsite
 adds Starlette + Uvicorn + Jinja2 + Mistune + PyYAML.
 
+> **Scope.** This document explains the docsite's design and configuration. It is **not** rendered by the docsite itself — `memex-docsite serve` renders your own project's `.memex/` wiki, not the plugin's `docs/` folder. The plugin's own docs live here in the repo because they're for plugin maintainers and contributors, not end users browsing their wiki.
+
 ## Quick start
 
 ```bash
@@ -357,6 +359,64 @@ absent fields fall back to documented defaults.
 | `writeFeatures`   | `[]`          | Phase-3+ gate. List the surfaces that accept POST. Phase 1 ignores this field.      |
 | `exportPath`      | `dist/`       | Default output dir for `memex-docsite build`.                                       |
 | `annotations.*`   | various       | Phase-4 settings; ignored by Phase 1.                                               |
+
+## Sections and types (profile-driven nav)
+
+The sidebar's **Sections** group is derived from your `memex.config.json`:
+
+- `index.sections` — the heading list (`["Entities", "Concepts", …]`).
+- `frontmatter.enum.type` — the controlled vocabulary of page types.
+
+Each section maps to one or more enum types. The default mapping uses an
+explicit table for English plurals (`"Analyses" → "analysis"`,
+`"Syntheses" → "synthesis"`, `"Open Questions" → "open-question"`,
+`"Recent Activity"` → virtual) and falls back to `rstrip("s")` for the
+rest. Pages with `frontmatter.type` matching a section's type land on
+`/sections/<slug>/`; pages with no matching type fall through to a
+synthetic `Uncategorised` section (only rendered when non-empty).
+
+For many-to-one mappings (e.g. `engineering-ops` "Planning" should
+contain `prd`, `rfc`, **and** `decision` pages), use the schema's
+array-of-objects form:
+
+```jsonc
+{
+  "index": {
+    "sections": [
+      { "name": "Planning", "slug": "planning", "types": ["prd", "rfc", "decision"] },
+      "Entities",
+      "Recent Activity"
+    ]
+  }
+}
+```
+
+To pretty-print kebab-case enum values in the page-type badge (e.g.
+`open-question` → `Open question`), define `enumDisplayNames`:
+
+```jsonc
+{
+  "frontmatter": {
+    "enumDisplayNames": {
+      "type": { "open-question": "Open question", "plot-thread": "Plot thread" }
+    }
+  }
+}
+```
+
+Per-profile defaults:
+
+| Profile          | Section count | Notable bridges |
+|------------------|---------------|-----------------|
+| `book-companion` | 7             | `summary` ↔ "Chapter Summaries" (override map) |
+| `engineering-ops`| 14            | `prd`/`rfc`/`decision` collapse into "Planning" if you switch to the array-of-objects form |
+| `generic`        | 3             | `topic` enum added in 0.1.0a1+ so the docsite has something to group on |
+| `personal-journal`| 4            | `entry`/`reflection`/`goal`/`topic` all surface |
+| `research-project`| 12           | Many enum types lack a dedicated section (e.g. `methodology`, `prompt`) — they get synthetic catch-all sections |
+| `research-wiki`  | 7             | All enum types map to a section |
+
+Wikis with a real top-level `sections/` folder must rename it — the
+docsite reserves `/sections/...` for the profile-driven nav.
 
 ## Auth modes
 

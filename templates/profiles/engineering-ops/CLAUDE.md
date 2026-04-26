@@ -20,6 +20,10 @@ The documentation system is enforced by hooks shipped in the `memex` Claude Code
 - [.memex/.open-questions/](.memex/.open-questions/) — unresolved items
 - [memex.config.json](memex.config.json) — schema
 
+## How the docsite shows this wiki
+
+The optional [memex-docsite](https://github.com/anthril/claude-memex/blob/main/docs/docsite.md) reads `memex.config.json#/index.sections` for the sidebar's "Sections" nav, and `frontmatter.enum.type` for the page-type badges. This profile maps multiple type enum values into a single section (e.g. Planning ↔ `prd|rfc|decision`); use the schema's array-of-objects form for `index.sections` if you need to override the bridge. Run `memex-docsite serve` (after `pip install -e ".[docsite]"`) to browse this wiki locally.
+
 ## Runtime behaviour
 
 - Before any non-trivial task, invoke the `memex-planner` subagent or read the relevant `.memex/` pages directly

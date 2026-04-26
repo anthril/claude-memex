@@ -21,6 +21,10 @@ See [.memex/AGENTS.md](.memex/AGENTS.md). Core rule: the LLM writes and maintain
 - [.memex/.open-questions/](.memex/.open-questions/) — unresolved items
 - [.memex/.rules/research-to-development.md](.memex/.rules/research-to-development.md) — how surfaces graduate when the project enters dev
 
+## How the docsite shows this wiki
+
+The optional [memex-docsite](https://github.com/anthril/claude-memex/blob/main/docs/docsite.md) reads `memex.config.json#/index.sections` for the sidebar's "Sections" nav, and `frontmatter.enum.type` for the page-type badges. This profile has more enum types than sections (e.g. `methodology`, `literature-review`, `prompt`); those land in synthetic catch-all sections so nothing is hidden. Run `memex-docsite serve` (after `pip install -e ".[docsite]"`) to browse this wiki locally.
+
 ## Profile
 
 This project was scaffolded with the `research-project` profile. See `.memex/AGENTS.md` \u00a73 for the trigger-to-artefact table. When the project transitions from planning into active development, consider running `/memex:init-profile engineering-ops` to overlay engineering-ops surfaces alongside the research tree — see [`research-to-development.md`](.memex/.rules/research-to-development.md) for the full graduation path.

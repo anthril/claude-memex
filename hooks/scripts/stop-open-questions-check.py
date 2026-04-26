@@ -89,6 +89,28 @@ def main() -> None:
         for lineno, text in hits:
             findings.append((rel, lineno, text.strip()[:160]))
 
+    # Persist findings to `.memex/.state/inline-todos.json` so the docsite's
+    # /open-questions page can surface them as an "Unpromoted TODOs" banner.
+    # Best-effort — failure here doesn't change the existing additionalContext flow.
+    if findings:
+        try:
+            state_dir = os.path.join(project_root, cfg["root"].rstrip("/"), ".state")
+            os.makedirs(state_dir, exist_ok=True)
+            state_path = os.path.join(state_dir, "inline-todos.json")
+            payload_out = {
+                "generated_at": __import__("datetime").datetime.now(
+                    __import__("datetime").timezone.utc
+                ).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "findings": [
+                    {"path": rel, "line": lineno, "text": text}
+                    for rel, lineno, text in findings
+                ],
+            }
+            with open(state_path, "w", encoding="utf-8") as fh:
+                json.dump(payload_out, fh, indent=2)
+        except Exception:
+            pass
+
     if not findings:
         sys.exit(0)
 

@@ -162,7 +162,9 @@ Next 3 actions:
   2. Review memex.config.json#/codeToDocMapping — empty by default; add project-specific mappings
   3. Run /memex:log to verify hooks are active
 
-Docs: docs/concepts.md, docs/cookbook.md
+Optional: pip install -e ".[docsite]" && memex-docsite serve to browse the new wiki
+
+Docs: docs/concepts.md, docs/cookbook.md, docs/docsite.md
 ```
 
 ## 9. Log the decision

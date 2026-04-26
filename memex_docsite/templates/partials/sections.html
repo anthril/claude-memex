@@ -1,0 +1,17 @@
+<nav class="sidebar-sections" aria-label="Wiki sections">
+  <div class="sidebar-section-header">
+    <a href="/sections">Sections</a>
+  </div>
+  <ul>
+    {% for s in nav_sections %}
+      <li>
+        <a href="/sections/{{ s.slug }}">
+          {{ s.label }}
+          {% if s.count %}
+            <span class="shortcut-count" aria-label="{{ s.count }} pages">{{ s.count }}</span>
+          {% endif %}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</nav>

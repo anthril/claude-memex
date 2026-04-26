@@ -114,6 +114,21 @@ def test_is_ignored_matches_nested_segments(research_wiki_project: Path):
 
 
 def test_is_ignored_empty_when_no_patterns(research_wiki_project: Path):
+    """A user with no `ignorePatterns` still gets the default `.state/sessions/**`
+    suppression so PreCompact session snapshots don't appear in the docsite tree.
+    """
     cfg = cfg_mod.load(start=research_wiki_project)
-    assert cfg.ignore_patterns == []
+    assert ".state/sessions/**" in cfg.ignore_patterns
     assert cfg.is_ignored("anything.md") is False
+    assert cfg.is_ignored(".state/sessions/abc.md") is True
+
+
+def test_user_ignore_patterns_merge_with_defaults(research_wiki_project: Path):
+    cfg_path = research_wiki_project / "memex.config.json"
+    raw = json.loads(cfg_path.read_text())
+    raw["docsite"] = {"ignorePatterns": ["build/**"]}
+    cfg_path.write_text(json.dumps(raw))
+    cfg = cfg_mod.load(start=research_wiki_project)
+    assert "build/**" in cfg.ignore_patterns
+    # Default still present.
+    assert ".state/sessions/**" in cfg.ignore_patterns

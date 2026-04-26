@@ -14,16 +14,80 @@ const writeEnabled = config.writeEnabled === true && config.staticMode !== true;
 const authMode = config.authMode || "none";
 const PREFIX_WIDTH = 32;
 
+// Module state — hoisted so bootstrap() can run synchronously at module-eval
+// time without hitting the temporal dead zone. injectFloatingButton,
+// renderAllAnnotations, and the selection toolbar all touch these before
+// the rest of the module body has finished executing.
+let pendingSelection = null;
+let annotationsCache = [];
+let floatingButton = null;
+let statusEl = null;
+
 if (root && pageSlug) {
-  bootstrap();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootstrap, { once: true });
+  } else {
+    bootstrap();
+  }
 }
 
 async function bootstrap() {
   injectFloatingButton();
   hookSelectionListener();
   if (sidebarClose) sidebarClose.addEventListener("click", closeSidebar);
-  if (newButton) newButton.addEventListener("click", () => beginAnnotation(captureSelection() || null));
+  if (newButton) newButton.addEventListener("click", openSidebarOverview);
   await renderAllAnnotations();
+}
+
+// Click-on-page-title button. If a selection exists, jump straight to the
+// new-annotation form. Otherwise open the sidebar showing existing
+// annotations on this page plus a clear "highlight text to annotate" hint.
+function openSidebarOverview() {
+  if (!sidebarEl) return;
+  const captured = captureSelection();
+  if (captured) {
+    beginAnnotation(captured);
+    return;
+  }
+  sidebarEl.classList.add("open");
+  sidebarBody.innerHTML = "";
+
+  const hint = document.createElement("div");
+  hint.className = "memex-annotation-hint";
+  hint.innerHTML = `
+    <strong>Annotate any passage</strong>
+    <p>
+      Highlight text in the article to attach a note. Existing annotations
+      on this page are shown below; click an annotation's highlight to
+      open it.
+    </p>
+  `;
+  sidebarBody.appendChild(hint);
+
+  const visible = annotationsCache.filter((a) => !a.replies_to && a.status !== "deleted");
+  if (visible.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty";
+    empty.textContent = "No annotations on this page yet.";
+    sidebarBody.appendChild(empty);
+    return;
+  }
+  const list = document.createElement("ul");
+  list.className = "memex-annotation-list";
+  for (const ann of visible) {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <button type="button" class="link-button" data-id="${escapeHtml(ann.id)}">
+        <strong>${escapeHtml(ann.author || "anonymous")}</strong>
+        <span class="visibility">${escapeHtml(ann.visibility || "public")}</span>
+        <blockquote>${escapeHtml((ann.selector || {}).exact || "")}</blockquote>
+        <p>${escapeHtml(ann.body || "")}</p>
+      </button>
+    `;
+    li.querySelector("button").addEventListener("click", () => openSidebar(ann));
+    list.appendChild(li);
+  }
+  sidebarBody.appendChild(list);
 }
 
 // ─── DOM ↔ text-offset helpers ──────────────────────────────────────────────
@@ -207,8 +271,7 @@ function wrapTextNode(textNode, ann) {
 
 // ─── sidebar / form ─────────────────────────────────────────────────────────
 
-let pendingSelection = null;
-let annotationsCache = [];
+// (pendingSelection, annotationsCache hoisted to top — see TDZ note.)
 
 function openSidebar(ann) {
   if (!sidebarEl || !sidebarBody) return;
@@ -316,7 +379,7 @@ function beginAnnotation(captured) {
 
 // ─── selection toolbar ─────────────────────────────────────────────────────
 
-let floatingButton = null;
+// (floatingButton hoisted to top — see TDZ note.)
 function injectFloatingButton() {
   if (!writeEnabled) return;
   floatingButton = document.createElement("button");
@@ -431,7 +494,7 @@ function escapeHtml(s) {
   })[c]);
 }
 
-let statusEl = null;
+// (statusEl hoisted to top — see TDZ note.)
 function flashStatus(msg) {
   if (!statusEl) {
     statusEl = document.createElement("div");

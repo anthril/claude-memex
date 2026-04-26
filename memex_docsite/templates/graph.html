@@ -1,32 +1,49 @@
 {% extends "base.html" %}
 {% block title %}Link graph — {{ site_title }}{% endblock %}
+{% block body_class %}is-fullwidth graph-page{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/graph.css">
+{% endblock %}
 
 {% block content %}
-<article class="page">
+<article class="page graph-page-shell">
   <header class="page-header">
     <h1>Link graph</h1>
     <span class="badge badge-type">graph</span>
+    <span class="page-meta" id="graph-summary">Loading…</span>
   </header>
-  <p class="page-meta" id="graph-summary">Loading…</p>
 
-  <section class="graph-controls">
-    <label><input type="checkbox" id="hide-orphans"> Hide orphans</label>
-    <button id="refresh-graph" type="button">Refresh</button>
-    <a id="export-mermaid" href="#" download="memex-graph.mmd">Export Mermaid</a>
+  <section class="graph-controls" aria-label="Graph controls">
+    <div class="graph-controls-group">
+      <label><input type="checkbox" id="hide-orphans"> Hide orphans</label>
+      <label><input type="checkbox" id="show-labels"> Always show labels</label>
+      <label><input type="checkbox" id="use-2d"> 2D fallback</label>
+    </div>
+    <div class="graph-controls-group graph-controls-actions">
+      <button id="graph-stats-toggle" type="button" aria-controls="graph-stats-sheet" aria-expanded="false" title="Show orphans / hubs / dead ends">📋 Stats</button>
+      <button id="refresh-graph" type="button">Refresh</button>
+      <a id="export-graph-json" href="#" download="memex-graph.json">Export JSON</a>
+    </div>
   </section>
 
   <div id="graph" class="graph-canvas" aria-label="Wiki link graph">
-    <noscript>The graph view needs JavaScript. The raw graph is available as JSON at <a href="/api/graph">/api/graph</a>.</noscript>
+    <noscript>The graph view needs JavaScript and WebGL. The raw graph is available as JSON at <a href="/api/graph">/api/graph</a>.</noscript>
   </div>
 
-  <details class="graph-summary">
-    <summary>Orphans, hubs, dead ends</summary>
+  <aside id="graph-stats-sheet" class="graph-stats-sheet" aria-label="Graph statistics" aria-hidden="true">
+    <header>
+      <strong>Orphans, hubs, dead ends</strong>
+      <button id="graph-stats-close" type="button" aria-label="Close">×</button>
+    </header>
     <div id="graph-stats"></div>
-  </details>
+  </aside>
+  <div id="graph-stats-backdrop" class="graph-stats-backdrop" aria-hidden="true"></div>
 </article>
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/vendor/mermaid.min.js"></script>
+<script src="/static/vendor/3d-force-graph.min.js"></script>
+<script src="/static/vendor/force-graph.min.js"></script>
 <script type="module" src="/static/graph.js"></script>
 {% endblock %}

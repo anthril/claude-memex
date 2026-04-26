@@ -66,6 +66,14 @@
             "type": "array",
             "items": { "type": "string" }
           }
+        },
+        "enumDisplayNames": {
+          "type": "object",
+          "description": "Optional human-readable labels for enum values. Keyed by enum field, then by enum value. e.g. { \"type\": { \"plot-thread\": \"Plot thread\" } }. The docsite uses these for the page-type badge; falls back to title-casing the raw value.",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
         }
       }
     },
@@ -136,9 +144,26 @@
       "properties": {
         "path": { "type": "string", "default": "index.md" },
         "sections": {
-          "type": "array",
-          "description": "Top-level headings Memex auto-maintains in index.md.",
-          "items": { "type": "string" }
+          "description": "Top-level headings Memex auto-maintains in index.md and the docsite sidebar uses for nav. Either an array of strings (heading == display name) or an array of objects with explicit display name plus the frontmatter.type values that belong under it.",
+          "oneOf": [
+            { "type": "array", "items": { "type": "string" } },
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "description": "Heading shown in index.md and the docsite sidebar." },
+                  "slug": { "type": "string", "description": "Optional URL-safe slug; defaults to kebab-case of `name`." },
+                  "types": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "frontmatter.type values that belong in this section. Pages with no matching type fall through to a synthetic 'uncategorised' section."
+                  }
+                }
+              }
+            }
+          ]
         }
       }
     },

@@ -21,12 +21,28 @@ LINK_RE = re.compile(r"\[([^\]]+)\]\((?!https?://|mailto:|#)([^)\s#]+)(?:#[^)]*)
 WIKILINK_RE = re.compile(resolver.WIKILINK_PATTERN)
 
 
+def _coerce_iso(value: object) -> str | None:
+    """Coerce a frontmatter date/datetime/string into an ISO-8601 string.
+
+    PyYAML parses bare `updated: 2026-04-23` as `datetime.date`; quoted
+    values come through as `str`. We accept both and reject anything else.
+    """
+    import datetime as _dt
+
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (_dt.datetime, _dt.date)):
+        return value.isoformat()
+    return None
+
+
 @dataclass(slots=True)
 class Node:
     slug: str
     title: str
     type: str | None = None
     is_hidden: bool = False
+    updated: str | None = None
 
 
 @dataclass(slots=True)
@@ -81,18 +97,24 @@ def build(
             or _first_heading(content)
             or rel.parts[-1][:-3].replace("-", " ").title()
         )
-        nodes[slug] = Node(slug=slug, title=str(title), type=fm.get("type"), is_hidden=is_hidden)
+        nodes[slug] = Node(
+            slug=slug,
+            title=str(title),
+            type=fm.get("type"),
+            is_hidden=is_hidden,
+            updated=_coerce_iso(fm.get("updated")),
+        )
 
     edges: list[Edge] = []
     inbound: dict[str, set[str]] = defaultdict(set)
     outbound: dict[str, set[str]] = defaultdict(set)
 
     for slug, _node in nodes.items():
-        path = resolver.slug_to_path(slug, wiki_root)
-        if path is None:
+        resolved_path = resolver.slug_to_path(slug, wiki_root)
+        if resolved_path is None:
             continue
         try:
-            content = path.read_text(encoding="utf-8", errors="replace")
+            content = resolved_path.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
         _, body = frontmatter.split(content)

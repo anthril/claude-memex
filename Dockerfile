@@ -27,15 +27,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
 # Install dependencies separately so Docker layer-caches the install layer.
+# The docsite never reads the plugin assets at runtime (hooks/templates/
+# schemas/commands/agents/skills are distributed via the Claude Code plugin
+# bundle, not the wheel) — so the image only needs the Python package.
 WORKDIR /opt/claude-memex
 COPY pyproject.toml README.md LICENSE /opt/claude-memex/
 COPY memex_docsite /opt/claude-memex/memex_docsite
-COPY hooks /opt/claude-memex/hooks
-COPY templates /opt/claude-memex/templates
-COPY schemas /opt/claude-memex/schemas
-COPY commands /opt/claude-memex/commands
-COPY agents /opt/claude-memex/agents
-COPY skills /opt/claude-memex/skills
 
 RUN pip install --no-cache-dir ".[docsite]"
 

@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>📓</text></svg>">
   {% block head %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
   <header class="site-header">
     <button id="sidebar-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">☰</button>
     <a class="site-title" href="/">{{ site_title }}</a>
@@ -26,11 +26,24 @@
   <div class="site-shell">
     <aside class="sidebar" aria-label="Navigation">
       <nav class="sidebar-shortcuts">
-        <a href="/open-questions">❓ Open questions</a>
+        <a href="/open-questions">
+          ❓ Open questions
+          {% if open_questions_count and open_questions_count > 0 %}
+            <span class="shortcut-count" aria-label="{{ open_questions_count }} active">{{ open_questions_count }}</span>
+          {% endif %}
+        </a>
         <a href="/rules">📜 Rules</a>
         <a href="/comments">💬 Comments</a>
         <a href="/graph">⛓ Link graph</a>
       </nav>
+      {% if nav_sections %}
+        {% include "partials/sections.html" %}
+      {% endif %}
+      <div class="sidebar-tree-actions">
+        <button type="button" class="link-button" data-tree-action="collapse">Collapse all</button>
+        <span class="sep">·</span>
+        <button type="button" class="link-button" data-tree-action="expand">Expand all</button>
+      </div>
       {% include "partials/tree.html" %}
     </aside>
 

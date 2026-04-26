@@ -20,7 +20,8 @@ You are a subagent specialised for auditing a Memex wiki end-to-end. The calling
 Follow the `wiki-lint` skill's workflow (`skills/wiki-lint/SKILL.md`). Subagent-specific adaptations:
 
 - **Do not auto-fix.** Produce the findings report only. The caller can invoke `doc-refactor` or apply fixes manually.
-- **Produce the report as a markdown file.** Save it to `<ops-root>/.audits/<DDMMYYYY-HHMM>/lint-report.md` so it persists beyond this isolated run.
+- **Produce the report as a markdown file.** Save it to `<ops-root>/.audits/<DDMMYYYY-HHMM>/lint-report.md` so it persists beyond this isolated run. The report is docsite-visible at `/<ops-root>/.audits/<DDMMYYYY-HHMM>/lint-report/` when `showHidden: true` (the default).
+- **Cross-check against the docsite's link graph.** When the docsite is running, `GET /api/graph` returns the same orphan / hub / dead-end sets this skill computes. They should agree (both walk `_lib/index_parse.py`-style wikilinks). If they diverge, the docsite is the source of truth — check whether your scope filter excluded files the docsite includes.
 
 ## Report structure
 

@@ -19,6 +19,10 @@ See [.memex/AGENTS.md](.memex/AGENTS.md). Core rule: the LLM writes the wiki, th
 - [.memex/log.md](.memex/log.md) — chronological ledger
 - [.memex/.open-questions/](.memex/.open-questions/) — unresolved items
 
+## How the docsite shows this wiki
+
+The optional [memex-docsite](https://github.com/anthril/claude-memex/blob/main/docs/docsite.md) reads `memex.config.json#/index.sections` for the sidebar's "Sections" nav, and `frontmatter.enum.type` for the page-type badges. Rename a section or add a new content type by editing the JSON — the docsite reflects it on next reload. Run `memex-docsite serve` (after `pip install -e ".[docsite]"`) to browse this wiki locally.
+
 ## Project-specific additions
 
 <!-- Put project-specific Claude instructions here. -->

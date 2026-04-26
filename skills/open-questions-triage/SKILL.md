@@ -15,6 +15,9 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash
 
 - Glob `<ops-root>/.open-questions/*.md` (exclude `.resolved/`)
 - Parse frontmatter — capture `title`, `slug`, `status`, `owner`, `created`, `updated`
+- A page with `status: resolved` in its frontmatter is treated as resolved even if it hasn't been moved to `.resolved/` (matches docsite behaviour as of 0.1.0a2).
+
+> **Note.** The docsite's `/open-questions` view lists the same files. Browser-driven submissions land in this same folder and append a line to `log.md`, so a triage pass and a docsite browse are looking at the same data.
 
 ## 2. Group
 

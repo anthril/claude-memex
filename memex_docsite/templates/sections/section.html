@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ section.label }} — {{ site_title }}{% endblock %}
+
+{% block content %}
+<article class="page">
+  <header class="page-header">
+    <h1>{{ section.label }}</h1>
+    {% if section.type_values %}
+      {% for t in section.type_values %}
+        <span class="badge badge-type badge-type-{{ t }}">{{ t }}</span>
+      {% endfor %}
+    {% endif %}
+  </header>
+
+  <p class="page-meta">
+    {{ section.count }} page{{ '' if section.count == 1 else 's' }}
+    {% if section.type_values %}
+      with type
+      {% for t in section.type_values %}
+        <code>{{ t }}</code>{% if not loop.last %} or {% endif %}
+      {% endfor %}
+    {% endif %}.
+  </p>
+
+  {% if section.pages %}
+    <ul class="folder-listing">
+      {% for node in section.pages %}
+        <li>
+          <a href="{{ node.slug | slug_to_url }}"><strong>{{ node.title }}</strong></a>
+          {% if node.type %}
+            <span class="badge badge-type badge-type-{{ node.type }}">{{ node.type }}</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">
+      {% if section.type_values %}
+        No pages tagged
+        {% for t in section.type_values %}
+          <code>type: {{ t }}</code>{% if not loop.last %} or {% endif %}
+        {% endfor %}
+        yet. Add the frontmatter to surface pages here.
+      {% else %}
+        No pages in this section yet.
+      {% endif %}
+    </p>
+  {% endif %}
+</article>
+{% endblock %}

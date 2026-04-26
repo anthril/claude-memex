@@ -27,16 +27,34 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Install dev dependencies
+      - name: Install dev + docsite dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+          python -m pip install -e ".[dev,docsite]"
 
       - name: Ruff
-        run: ruff check hooks/ tests/ scripts/
+        run: ruff check hooks/ tests/ scripts/ memex_docsite/
 
       - name: Mypy
-        run: mypy hooks/
+        run: mypy hooks/ memex_docsite/
 
       - name: Pytest
         run: pytest -ra
+
+      - name: memex-docsite check (fixture wiki)
+        run: memex-docsite --cwd examples/research-wiki-demo check
+
+  docker:
+    name: Docker build smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        run: docker buildx build --load -t memex-docsite-ci .
+
+      - name: Verify CLI inside image
+        run: docker run --rm memex-docsite-ci memex-docsite --version

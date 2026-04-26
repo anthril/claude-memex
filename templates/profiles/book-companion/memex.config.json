@@ -51,7 +51,7 @@
 
   "index": {
     "path": "index.md",
-    "sections": ["Characters", "Places", "Themes", "Plot Threads", "Chapter Summaries", "Open Questions"]
+    "sections": ["Characters", "Places", "Themes", "Plot Threads", "Chapter Summaries", "Open Questions", "Recent Activity"]
   },
 
   "search": {

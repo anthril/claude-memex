@@ -27,9 +27,15 @@ def find_project_root(start: Path | None = None) -> Path:
 
 
 def load_raw_config(project_root: Path) -> dict:
-    """Read `memex.config.json` at the given project root."""
+    """Read `memex.config.json` at the given project root and merge it on
+    top of the shared defaults so a thin user config validates the same way
+    in the docsite as it does in the hook bus.
+    """
+    from .config_defaults import apply_defaults
+
     cfg_path = project_root / CONFIG_FILENAME
-    return json.loads(cfg_path.read_text(encoding="utf-8"))
+    user = json.loads(cfg_path.read_text(encoding="utf-8"))
+    return apply_defaults(user)
 
 
 def wiki_root(project_root: Path, raw_config: dict) -> Path:
