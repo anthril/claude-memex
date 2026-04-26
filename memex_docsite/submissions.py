@@ -223,13 +223,13 @@ def list_open_questions(cfg: DocsiteConfig) -> list[dict]:
         for path in sorted(folder.glob("*.md")):
             if path.name in _NON_ENTRY_FILES:
                 continue
-            out.append(_summarise(path, wiki_root=cfg.memex_root))
+            out.append(_summarise(path, wiki_root=cfg.wiki_root))
     resolved_dir = folder / RESOLVED_DIR
     if resolved_dir.is_dir():
         for path in sorted(resolved_dir.glob("*.md")):
             if path.name in _NON_ENTRY_FILES:
                 continue
-            out.append(_summarise(path, wiki_root=cfg.memex_root))
+            out.append(_summarise(path, wiki_root=cfg.wiki_root))
     return out
 
 
@@ -238,7 +238,7 @@ def list_rules(cfg: DocsiteConfig) -> list[dict]:
     if not folder.is_dir():
         return []
     return [
-        _summarise(path, wiki_root=cfg.memex_root)
+        _summarise(path, wiki_root=cfg.wiki_root)
         for path in sorted(folder.glob("*.md"))
         if path.name not in _NON_ENTRY_FILES
     ]

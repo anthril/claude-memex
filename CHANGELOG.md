@@ -4,6 +4,20 @@ All notable changes to `claude-memex` are documented here. Format follows [Keep 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.3] — 2026-04-26
+
+### Fixed
+
+- **Open-question + rule listing URLs 404'd when `docsite.contentRoot` was widened.** Aurora and other projects that set `contentRoot: "."` (so the docsite serves the whole repo, not just `.memex/`) had every entry in `/open-questions` and `/rules` link to a 404 — the listings built URLs relative to the canonical `memex_root` while the page handler routes against the wider `wiki_root`. Both helpers now use `wiki_root`, so URLs include the `.memex/` prefix when needed and resolve cleanly.
+
+### Added
+
+- **`memex-docsite serve --reload`** — re-imports the app on file changes (watches the project root + the installed `memex_docsite` package). Useful during development; production deployments should keep the default `serve` (no reload) for efficiency. Implemented via `make_app_from_env` factory + uvicorn's reload mode.
+
+### Tests
+
+- Two regression tests in `tests/test_docsite_routes_phase3.py` — one against `contentRoot: "."` (must route via `/.memex/...`) and a companion against the default root (must keep `/.open-questions/...` working).
+
 ## [0.1.0-alpha.2] — 2026-04-26
 
 ### Added

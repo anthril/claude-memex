@@ -177,3 +177,87 @@ def test_rules_post_404_when_writes_disabled(research_wiki_project: Path):
             "/rules", data={"title": "x", "body": "y"}, follow_redirects=False
         )
         assert r.status_code == 404
+
+
+def test_open_questions_links_resolve_with_widened_content_root(
+    research_wiki_project: Path,
+):
+    """Regression — when a project widens `docsite.contentRoot` (e.g. to ".")
+    so the docsite serves the whole repo, open-question listing URLs must
+    still resolve. Previously the URLs were built relative to `memex_root`
+    (always `.memex/`) but the page handler routes against `wiki_root`
+    (the widened root), producing 404s for every entry.
+    """
+    cfg_path = research_wiki_project / "memex.config.json"
+    raw = json.loads(cfg_path.read_text())
+    raw["docsite"] = {
+        "enabled": True,
+        "writeFeatures": ["open-questions"],
+        "contentRoot": ".",
+    }
+    cfg_path.write_text(json.dumps(raw))
+
+    cfg = cfg_mod.load(start=research_wiki_project)
+    # Sanity: contentRoot really did widen the wiki root.
+    assert cfg.wiki_root == research_wiki_project.resolve()
+    assert cfg.memex_root == (research_wiki_project / ".memex").resolve()
+
+    with TestClient(make_app(cfg)) as client:
+        # File a question via the API so we don't depend on fixture content.
+        r = client.post(
+            "/open-questions",
+            data={"title": "Where do streams emit?", "body": "Investigating."},
+            follow_redirects=False,
+        )
+        assert r.status_code == 303
+
+        listing = client.get("/open-questions")
+        assert listing.status_code == 200
+        # With contentRoot=".", URLs must include the .memex/ prefix so the
+        # page handler — routing against wiki_root — can find the file.
+        import re
+
+        hrefs = re.findall(
+            r'<a class="entry-title" href="([^"]+)"', listing.text
+        )
+        assert hrefs, "no open-question entries rendered"
+        for href in hrefs:
+            assert href.startswith("/.memex/.open-questions/"), (
+                f"href {href!r} should be rooted at the widened wiki_root, "
+                f"not the canonical memex_root"
+            )
+            page = client.get(href)
+            assert page.status_code == 200, (
+                f"GET {href} returned {page.status_code}; expected 200 — "
+                f"this is the URL-routing bug fixed in 0.1.0-alpha.3."
+            )
+
+
+def test_open_questions_links_resolve_with_default_content_root(
+    research_wiki_project: Path,
+):
+    """Companion to the contentRoot=. test — the default (no override) path
+    must still produce `/.open-questions/...` URLs that resolve, since
+    wiki_root == memex_root in that case."""
+    _enable_writes(research_wiki_project)
+    cfg = cfg_mod.load(start=research_wiki_project)
+    assert cfg.wiki_root == cfg.memex_root
+
+    with TestClient(make_app(cfg)) as client:
+        r = client.post(
+            "/open-questions",
+            data={"title": "Default-root question", "body": "Investigating."},
+            follow_redirects=False,
+        )
+        assert r.status_code == 303
+
+        listing = client.get("/open-questions")
+        import re
+
+        hrefs = re.findall(
+            r'<a class="entry-title" href="([^"]+)"', listing.text
+        )
+        assert hrefs
+        for href in hrefs:
+            assert href.startswith("/.open-questions/")
+            assert client.get(href).status_code == 200

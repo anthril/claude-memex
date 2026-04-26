@@ -844,3 +844,31 @@ def make_app(cfg: DocsiteConfig) -> Starlette:
     )
     app.state.docsite_config = cfg
     return app
+
+
+def make_app_from_env() -> Starlette:
+    """Application factory used by `memex-docsite serve --reload`.
+
+    uvicorn's `--reload` re-imports the app target on every file change, so
+    it can't hold a reference to a pre-built `Starlette` instance. Instead
+    the CLI stashes the project root + per-call overrides in env vars; this
+    factory rebuilds the same cfg in each reloaded worker.
+    """
+    import os
+
+    from . import config as _config
+
+    cwd_env = os.environ.get("MEMEX_DOCSITE_CWD")
+    cfg = _config.load(start=Path(cwd_env) if cwd_env else None)
+
+    port_env = os.environ.get("MEMEX_DOCSITE_PORT")
+    if port_env:
+        cfg.port = int(port_env)
+    host_env = os.environ.get("MEMEX_DOCSITE_HOST")
+    if host_env:
+        cfg.host = host_env
+    auth_env = os.environ.get("MEMEX_DOCSITE_AUTH")
+    if auth_env:
+        cfg.auth = auth_env  # type: ignore[assignment]
+
+    return make_app(cfg)
