@@ -1,0 +1,11 @@
+{# Backlinks — every page that links *to* the current page. #}
+{% if backlinks %}
+<nav class="backlinks-panel" aria-label="Backlinks">
+  <h3>Linked from</h3>
+  <ul>
+    {% for b in backlinks %}
+      <li><a href="{{ b.url }}">{{ b.title }}</a></li>
+    {% endfor %}
+  </ul>
+</nav>
+{% endif %}

@@ -1,0 +1,23 @@
+{% macro render_node(node, current_slug) %}
+  {% if node.is_folder %}
+    {% if node.children %}
+    <details class="tree-folder{% if node.is_hidden %} tree-hidden{% endif %}" open>
+      <summary>{{ node.name }}</summary>
+      <ul class="tree-children">
+        {% for child in node.children %}
+          <li>{{ render_node(child, current_slug) }}</li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  {% else %}
+    <a class="tree-leaf{% if node.slug == current_slug %} active{% endif %}"
+       href="{{ node.slug | slug_to_url }}">{{ node.name }}</a>
+  {% endif %}
+{% endmacro %}
+
+<nav class="tree">
+  {% for child in tree.children %}
+    {{ render_node(child, current_slug) }}
+  {% endfor %}
+</nav>

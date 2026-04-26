@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" data-theme="{{ theme }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site_title }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/base.css">
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>📓</text></svg>">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="site-header">
+    <button id="sidebar-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <a class="site-title" href="/">{{ site_title }}</a>
+    <form class="site-search" action="/search" method="get" role="search">
+      <input id="site-search-input" type="search" name="q" placeholder="Search the wiki… (press /)" aria-label="Search the wiki"
+             value="{{ search_query or '' }}" autocomplete="off">
+      <a class="site-action" href="/graph" title="Link graph">⛓</a>
+    </form>
+    <nav class="site-actions">
+      <button id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">◐</button>
+      {% if static_mode %}<span class="badge badge-static" title="Static export — submissions disabled">static</span>{% endif %}
+    </nav>
+  </header>
+
+  <div class="site-shell">
+    <aside class="sidebar" aria-label="Navigation">
+      <nav class="sidebar-shortcuts">
+        <a href="/open-questions">❓ Open questions</a>
+        <a href="/rules">📜 Rules</a>
+        <a href="/comments">💬 Comments</a>
+        <a href="/graph">⛓ Link graph</a>
+      </nav>
+      {% include "partials/tree.html" %}
+    </aside>
+
+    <main class="content">
+      {% include "partials/breadcrumbs.html" %}
+      {% block content %}{% endblock %}
+    </main>
+
+    {% block right_rail %}{% endblock %}
+  </div>
+
+  <script src="/static/app.js" type="module"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

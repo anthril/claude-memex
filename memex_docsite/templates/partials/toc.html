@@ -1,0 +1,18 @@
+{# Table of contents — H2/H3 only.
+   `headings` is the list of (level, slug, text) tuples emitted by the renderer. #}
+{% set tocable = [] %}
+{% for level, slug, text in headings %}
+  {% if level in [2, 3] %}
+    {% set _ = tocable.append((level, slug, text)) %}
+  {% endif %}
+{% endfor %}
+{% if tocable | length >= 2 %}
+<nav class="toc" aria-label="Table of contents">
+  <h3>On this page</h3>
+  <ol>
+    {% for level, slug, text in tocable %}
+      <li class="toc-l{{ level }}"><a href="#{{ slug }}">{{ text }}</a></li>
+    {% endfor %}
+  </ol>
+</nav>
+{% endif %}

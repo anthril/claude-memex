@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Open questions — {{ site_title }}{% endblock %}
+
+{% block content %}
+<article class="page">
+  <header class="page-header">
+    <h1>Open questions</h1>
+    <span class="badge badge-type">open-questions</span>
+    {% if write_enabled %}
+      <a class="site-action" href="/open-questions/new">+ Submit</a>
+    {% endif %}
+  </header>
+
+  <section class="open-questions">
+    <h2>Active <span class="page-meta">({{ active | length }})</span></h2>
+    {% if active %}
+      <ul class="entry-list">
+        {% for item in active %}
+          <li>
+            {% if item.url %}
+              <a class="entry-title" href="{{ item.url }}">{{ item.title }}</a>
+            {% else %}
+              <span class="entry-title">{{ item.title }}</span>
+            {% endif %}
+            <span class="entry-meta">
+              {% if item.owner %}<span>{{ item.owner }}</span>{% endif %}
+              {% if item.created %}<time>{{ item.created }}</time>{% endif %}
+            </span>
+            {% if item.body_preview %}<p class="entry-preview">{{ item.body_preview }}</p>{% endif %}
+            {% if write_enabled %}
+              <form class="inline-form" action="/open-questions/{{ item.slug }}/resolve" method="post">
+                <button type="submit" class="link-button">Mark resolved</button>
+              </form>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">No active open questions.</p>
+    {% endif %}
+
+    <h2>Resolved <span class="page-meta">({{ resolved | length }})</span></h2>
+    {% if resolved %}
+      <ul class="entry-list entry-list-muted">
+        {% for item in resolved %}
+          <li>
+            {% if item.url %}
+              <a class="entry-title" href="{{ item.url }}">{{ item.title }}</a>
+            {% else %}
+              <span class="entry-title">{{ item.title }}</span>
+            {% endif %}
+            <span class="entry-meta">
+              {% if item.owner %}<span>{{ item.owner }}</span>{% endif %}
+              {% if item.created %}<time>{{ item.created }}</time>{% endif %}
+            </span>
+            {% if item.body_preview %}<p class="entry-preview">{{ item.body_preview }}</p>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">No resolved questions yet.</p>
+    {% endif %}
+  </section>
+</article>
+{% endblock %}

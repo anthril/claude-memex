@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ folder_name }} — {{ site_title }}{% endblock %}
+
+{% block content %}
+<article class="page">
+  <header class="page-header">
+    <h1>{{ folder_name or "/" }}</h1>
+    <span class="badge badge-type">folder</span>
+  </header>
+
+  <p class="page-meta">{{ children | length }} item(s)</p>
+
+  <ul class="folder-listing">
+    {% for child in children %}
+      <li>
+        <a href="{{ child.url }}">{% if child.is_folder %}📁 {% else %}📄 {% endif %}{{ child.name }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+</article>
+{% endblock %}

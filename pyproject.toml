@@ -11,20 +11,39 @@ dev = [
   "pytest>=8",
   "ruff>=0.6",
   "mypy>=1.11",
+  "httpx>=0.27",
 ]
+docsite = [
+  "starlette>=0.36",
+  "uvicorn[standard]>=0.30",
+  "jinja2>=3.1",
+  "mistune>=3.0",
+  "pyyaml>=6.0",
+]
+
+[project.scripts]
+memex-docsite = "memex_docsite.cli:main"
 
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-# claude-memex is a Claude Code plugin shipped as a repo of markdown
-# templates, JSON, and Python hook scripts — NOT a Python distribution.
-# Tell setuptools there are zero modules/packages to install so that
-# `pip install -e ".[dev]"` works for contributor dev setup (pulling in
-# pytest/ruff/mypy) without setuptools trying to package the plugin
-# assets (hooks/, agents/, skills/, commands/, templates/, schemas/).
-py-modules = []
+# Hooks, agents, skills, commands, templates, and schemas remain plugin
+# assets — not Python modules. The optional `memex_docsite` package is
+# the one importable Python distribution this repo ships, gated behind
+# the `docsite` extras so contributors who only touch hooks aren't forced
+# to install Starlette/Uvicorn/Mistune.
+packages = ["memex_docsite"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+memex_docsite = [
+  "templates/*.html",
+  "templates/**/*.html",
+  "static/*",
+  "static/**/*",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

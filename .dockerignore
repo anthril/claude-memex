@@ -1,0 +1,25 @@
+# Keep the build context small + reproducible.
+.git
+.github
+.venv
+venv
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.mypy_cache
+.ruff_cache
+node_modules
+dist
+build
+*.egg-info
+tests
+examples
+# Don't ship contributor docs in the runtime image.
+.docs
+docs/cookbook.md
+# Local config / secrets.
+.env
+.env.*

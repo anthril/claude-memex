@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Link graph — {{ site_title }}{% endblock %}
+
+{% block content %}
+<article class="page">
+  <header class="page-header">
+    <h1>Link graph</h1>
+    <span class="badge badge-type">graph</span>
+  </header>
+  <p class="page-meta" id="graph-summary">Loading…</p>
+
+  <section class="graph-controls">
+    <label><input type="checkbox" id="hide-orphans"> Hide orphans</label>
+    <button id="refresh-graph" type="button">Refresh</button>
+    <a id="export-mermaid" href="#" download="memex-graph.mmd">Export Mermaid</a>
+  </section>
+
+  <div id="graph" class="graph-canvas" aria-label="Wiki link graph">
+    <noscript>The graph view needs JavaScript. The raw graph is available as JSON at <a href="/api/graph">/api/graph</a>.</noscript>
+  </div>
+
+  <details class="graph-summary">
+    <summary>Orphans, hubs, dead ends</summary>
+    <div id="graph-stats"></div>
+  </details>
+</article>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/vendor/mermaid.min.js"></script>
+<script type="module" src="/static/graph.js"></script>
+{% endblock %}

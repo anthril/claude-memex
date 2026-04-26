@@ -1,0 +1,44 @@
+# memex-docsite — self-hosted with live writes, behind a token.
+#
+# Usage:
+#   1. Drop a `.env` file alongside this compose file with:
+#        MEMEX_DOCSITE_TOKEN=<a long random secret>
+#        MEMEX_WIKI_PATH=/abs/path/to/your/wiki   # the project containing memex.config.json
+#   2. `docker compose up -d`
+#   3. Visit http://localhost:8000 — read-only by default.
+#      To submit, attach the bearer token (UI prompts for it once and
+#      stores it in localStorage).
+#
+# For team / public deployment, put this behind a reverse proxy that
+# terminates TLS and (optionally) handles per-user identity. See
+# docs/docsite.md for nginx / Caddy / Traefik snippets.
+
+services:
+  docsite:
+    image: claude-memex-docsite:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - memex-docsite
+      - serve
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --auth
+      - token
+    environment:
+      MEMEX_DOCSITE_TOKEN: ${MEMEX_DOCSITE_TOKEN:?set MEMEX_DOCSITE_TOKEN in .env}
+      MEMEX_DOCSITE_USER: ${MEMEX_DOCSITE_USER:-writer}
+    volumes:
+      - ${MEMEX_WIKI_PATH:?set MEMEX_WIKI_PATH to your wiki dir}:/wiki:rw
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2).status == 200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

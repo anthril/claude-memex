@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Rules — {{ site_title }}{% endblock %}
+
+{% block content %}
+<article class="page">
+  <header class="page-header">
+    <h1>Rules</h1>
+    <span class="badge badge-type">rules</span>
+    {% if write_enabled %}
+      <a class="site-action" href="/rules/new">+ Submit</a>
+    {% endif %}
+  </header>
+
+  {% if rules %}
+    <ul class="entry-list">
+      {% for rule in rules %}
+        <li>
+          {% if rule.url %}
+            <a class="entry-title" href="{{ rule.url }}">{{ rule.title }}</a>
+          {% else %}
+            <span class="entry-title">{{ rule.title }}</span>
+          {% endif %}
+          <span class="entry-meta">
+            {% if rule.owner %}<span>{{ rule.owner }}</span>{% endif %}
+            {% if rule.created %}<time>{{ rule.created }}</time>{% endif %}
+          </span>
+          {% if rule.body_preview %}<p class="entry-preview">{{ rule.body_preview }}</p>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">No rules submitted yet.</p>
+  {% endif %}
+</article>
+{% endblock %}

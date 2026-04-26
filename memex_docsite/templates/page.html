@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }} — {{ site_title }}{% endblock %}
+
+{% set annotations_enabled = ('annotations' in write_features) and not static_mode %}
+{% set annotations_disabled_for_page = page.frontmatter.annotations is defined and (page.frontmatter.annotations == false or page.frontmatter.annotations == 'false') %}
+{% set comments_enabled = ('comments' in write_features) and not static_mode %}
+{% set comments_disabled_for_page = page.frontmatter.comments is defined and (page.frontmatter.comments == false or page.frontmatter.comments == 'false') %}
+
+{% block content %}
+<article class="page">
+  <header class="page-header">
+    <h1>{{ page.title }}</h1>
+    {% if page.frontmatter.status %}
+      <span class="badge badge-status badge-{{ page.frontmatter.status }}">{{ page.frontmatter.status }}</span>
+    {% endif %}
+    {% if page.frontmatter.type %}
+      <span class="badge badge-type">{{ page.frontmatter.type }}</span>
+    {% endif %}
+    {% if annotations_enabled and not annotations_disabled_for_page %}
+      <button id="annotation-new-button" type="button" class="site-action" title="New annotation">📝</button>
+    {% endif %}
+  </header>
+
+  {% if page.frontmatter.updated %}
+    <p class="page-meta">Updated <time>{{ page.frontmatter.updated }}</time></p>
+  {% endif %}
+
+  <div class="page-body" data-annotation-root>
+    {{ page.html | safe }}
+  </div>
+
+  {% if page.broken_links %}
+    <aside class="broken-links">
+      <details>
+        <summary>{{ page.broken_links | length }} broken link(s)</summary>
+        <ul>
+          {% for link in page.broken_links %}<li><code>{{ link }}</code></li>{% endfor %}
+        </ul>
+      </details>
+    </aside>
+  {% endif %}
+</article>
+
+{% if not annotations_disabled_for_page %}
+  <aside id="annotation-sidebar" aria-label="Annotations" aria-hidden="true">
+    <header>
+      <strong>Annotations</strong>
+      <button id="annotation-sidebar-close" type="button" aria-label="Close">×</button>
+    </header>
+    <div id="annotation-sidebar-body"></div>
+  </aside>
+{% endif %}
+
+{% if not comments_disabled_for_page %}
+  <section id="memex-comments" class="memex-comments" aria-label="Page comments"></section>
+{% endif %}
+{% endblock %}
+
+{% block right_rail %}
+{% set headings = page.headings %}
+<aside class="right-rail" aria-label="Page metadata">
+  {% include "partials/toc.html" %}
+  {% include "partials/backlinks.html" %}
+</aside>
+{% endblock %}
+
+{% block scripts %}
+{% if not annotations_disabled_for_page %}
+<script>
+  window.MEMEX_ANNOTATIONS_CONFIG = {
+    pageSlug: {{ current_slug | tojson }},
+    writeEnabled: {{ 'true' if annotations_enabled else 'false' }},
+    authMode: {{ auth_mode | tojson }},
+    staticMode: {{ 'true' if static_mode else 'false' }}
+  };
+</script>
+<script type="module" src="/static/annotations.js"></script>
+{% endif %}
+{% if not comments_disabled_for_page %}
+<script>
+  window.MEMEX_COMMENTS_CONFIG = {
+    pageSlug: {{ current_slug | tojson }},
+    writeEnabled: {{ 'true' if comments_enabled else 'false' }},
+    authMode: {{ auth_mode | tojson }},
+    staticMode: {{ 'true' if static_mode else 'false' }}
+  };
+</script>
+<script type="module" src="/static/comments.js"></script>
+{% endif %}
+{% endblock %}

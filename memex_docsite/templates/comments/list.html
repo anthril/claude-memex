@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Recent comments — {{ site_title }}{% endblock %}
+
+{% block content %}
+<article class="page">
+  <header class="page-header">
+    <h1>Recent comments</h1>
+    <span class="badge badge-type">comments</span>
+  </header>
+
+  <p class="page-meta">{{ recent | length }} most-recent comment(s) across all pages.</p>
+
+  {% if recent %}
+    <ul class="entry-list">
+      {% for rec in recent %}
+        <li>
+          <header class="entry-meta">
+            <a class="entry-title" href="{{ rec.url }}">{{ rec.page }}</a>
+            <span>{{ rec.author or 'anonymous' }}</span>
+            <time>{{ rec.created or '' }}</time>
+            <span class="visibility">{{ rec.visibility or 'public' }}</span>
+            {% if rec.status == 'deleted' %}<span class="badge badge-static">deleted</span>{% endif %}
+          </header>
+          <p class="entry-preview">{{ rec.body }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">No comments anywhere yet.</p>
+  {% endif %}
+</article>
+{% endblock %}

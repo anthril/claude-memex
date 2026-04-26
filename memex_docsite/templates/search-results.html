@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% set search_query = query %}
+{% block title %}Search: {{ query }} — {{ site_title }}{% endblock %}
+
+{% block content %}
+<article class="page">
+  <header class="page-header">
+    <h1>Search</h1>
+    <span class="badge badge-type">{{ search_engine }}</span>
+  </header>
+
+  <form class="search-inline" action="/search" method="get" role="search">
+    <input type="search" name="q" value="{{ query }}" placeholder="Search the wiki…" autofocus>
+    <button type="submit">Search</button>
+  </form>
+
+  {% if query and not results %}
+    <p class="empty">No matches for <code>{{ query }}</code>.</p>
+  {% endif %}
+
+  {% if results %}
+    <p class="page-meta">{{ results | length }} result(s) for <code>{{ query }}</code></p>
+    <ul class="search-results">
+      {% for r in results %}
+        <li>
+          <a class="result-title" href="{{ r.slug | slug_to_url }}">{{ r.title }}</a>
+          <span class="result-slug">{{ r.slug }}</span>
+          <p class="result-snippet">{{ r.snippet }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</article>
+{% endblock %}
