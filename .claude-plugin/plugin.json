@@ -1,6 +1,6 @@
 {
   "name": "memex",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "A Claude-maintained wiki for any project. Hook-enforced doc discipline; LLM-owned knowledge base; ingest/query/lint loop, plus an optional self-hosted browsable docsite (memex-docsite). Inspired by Karpathy's llm-wiki gist.",
   "author": {
     "name": "Anthril",

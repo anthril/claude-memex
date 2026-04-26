@@ -4,6 +4,8 @@ All notable changes to `claude-memex` are documented here. Format follows [Keep 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.2] — 2026-04-26
+
 ### Added
 
 - **`research-project` profile** — for research/planning projects that will migrate into development (e.g. an architecture proposal with literature review, hypotheses, experiments, and planned systems). Superset of `research-wiki` with first-class `research/`, `architecture/`, `systems/`, `evaluation/` surfaces.
