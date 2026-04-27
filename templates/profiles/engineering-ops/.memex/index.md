@@ -54,6 +54,10 @@ This file is auto-maintained by Memex. It catalogues every wiki page grouped by 
 
 *No open questions yet. See `.open-questions/` when they accumulate.*
 
+## Project-owner actions
+
+*No pending owner actions. See [`.project-owner-actions/`](.project-owner-actions/README.md) when external blockers accumulate (vendor contracts, secret rotations needing principal authorisation, compliance signoffs, on-call captain naming).*
+
 ## Recent Activity
 
 *Log entries will populate here on every session stop.*

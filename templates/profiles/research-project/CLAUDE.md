@@ -19,6 +19,7 @@ See [.memex/AGENTS.md](.memex/AGENTS.md). Core rule: the LLM writes and maintain
 - [.memex/log.md](.memex/log.md) — chronological ledger
 - [.memex/research/roadmap.md](.memex/research/roadmap.md) — rolling research roadmap
 - [.memex/.open-questions/](.memex/.open-questions/) — unresolved items
+- [.memex/.project-owner-actions/](.memex/.project-owner-actions/) — owner-only blockers (file via `/memex:owner-action`)
 - [.memex/.rules/research-to-development.md](.memex/.rules/research-to-development.md) — how surfaces graduate when the project enters dev
 
 ## How the docsite shows this wiki

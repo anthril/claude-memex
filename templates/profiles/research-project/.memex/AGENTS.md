@@ -19,7 +19,8 @@ Inspired by [Andrej Karpathy's `llm-wiki.md` gist](https://gist.github.com/karpa
 1. Read [README.md](README.md) for the folder map
 2. Read [index.md](index.md) — catalogue of current pages
 3. Check [`.open-questions/`](.open-questions/) for the topic
-4. Read [`.rules/`](.rules/) for project-specific conventions — especially [`research-to-development.md`](.rules/research-to-development.md) if you're about to propose moving a surface from planning into code
+4. Check [`.project-owner-actions/`](.project-owner-actions/) for owner-only blockers that touch your task — if your work is gated on one, surface it before going further
+5. Read [`.rules/`](.rules/) for project-specific conventions — especially [`research-to-development.md`](.rules/research-to-development.md) if you're about to propose moving a surface from planning into code
 
 ## 2. The three layers (plus two)
 

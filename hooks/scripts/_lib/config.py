@@ -22,6 +22,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "index.md",
         "log.md",
         ".open-questions",
+        ".project-owner-actions",
         ".rules",
         ".state",
     ],
