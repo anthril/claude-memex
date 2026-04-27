@@ -50,6 +50,12 @@ Produces a structured findings report. Each finding has a severity (`info`, `war
 
 - Every `.open-questions/*.md` has an `owner:` set (not `unassigned`)? Unassigned → `warn` if age > 30 days
 - Resolved questions in `.open-questions/` (not yet moved to `.resolved/`) → `info`
+- Every active `.open-questions/*.md` has a populated **related-files section**:
+  - The section is named `## Related files` (slash-command template) **or** is the `## Scope > Affected wiki areas` bullet block (elaborate template). One of the two MUST be present.
+  - The section MUST contain at least one markdown link `[label](path)`. Bare paths, code-fenced filenames, or empty placeholders (`<...>`) → `issue`.
+  - Each linked path MUST resolve to an existing file (relative to the open question's directory). Dangling target → `issue`.
+  - Section absent entirely → `issue`.
+- Resolved-by-ADR convention: a question with `status: resolved-by-ADR-NNNN` should have a corresponding `## Resolution log` entry citing the ADR by number → missing entry → `warn`.
 
 ## 7. Check code-to-doc mappings
 
@@ -72,8 +78,9 @@ For each of these, offer to fix:
 - **Orphan page** — offer to add a "See also" link from the most plausible parent
 - **`updated:` bump needed** on a page you're about to edit — bump it
 - **Dangling link** — offer to create a stub page OR remove the link
+- **Open question with bare-path related-files** — offer to convert each bare path to a `[label](path)` markdown link. Derive the label from the file's `title:` frontmatter where possible.
 
-Do NOT auto-resolve contradictions or stale-claim warnings — those need human judgement.
+Do NOT auto-resolve contradictions, stale-claim warnings, or empty-related-files findings — those need human judgement (the agent has to decide which files actually relate to the question).
 
 ## 10. Save the report
 

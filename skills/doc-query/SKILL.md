@@ -56,4 +56,4 @@ If nothing relevant is found:
 
 - Say so directly — don't manufacture an answer from training data
 - Suggest which `raw/` or external source might fill the gap
-- Offer to file the question as `.open-questions/<slug>.md`
+- Offer to file the question as `.open-questions/<slug>.md`. When filing, populate `## Related files` with markdown links to whatever pages you *did* find in the search — even partial matches are useful context for whoever resolves the question. Bare paths do not count; the link graph only picks up real markdown links.

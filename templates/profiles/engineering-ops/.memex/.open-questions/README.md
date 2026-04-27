@@ -5,7 +5,7 @@ type: rule
 status: active
 owner: unassigned
 created: 2026-04-23
-updated: 2026-04-23
+updated: 2026-04-27
 ---
 
 # Open questions
@@ -31,6 +31,13 @@ What prompted the question. Link the page / audit / session where it surfaced.
 ## The question
 One or two sentences. Crisp.
 
+## Related files
+Markdown links to every file the question touches — runbooks, specs, code, configs, ADRs.
+Use `[label](relative/path)`; bare paths do not count.
+
+- [<short label>](<relative/path/to/file>) — <one-line why this file is relevant>
+- ...
+
 ## What we know
 Dot points. Include links to related pages.
 
@@ -40,6 +47,8 @@ Dot points on the decision criteria or blockers.
 ## Proposed resolutions
 Numbered alternatives with tradeoffs, if any.
 ```
+
+The `## Related files` section is **mandatory**. The wiki-lint skill flags open questions whose `## Related files` is missing, empty, or contains bare paths instead of markdown links. Engineering questions almost always touch a runbook, an ADR, or a service config — name them. If a question genuinely touches nothing, it probably belongs as an inline note on the most-affected page rather than as a cross-cutting open question.
 
 ## Workflow
 

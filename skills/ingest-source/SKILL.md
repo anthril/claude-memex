@@ -91,7 +91,9 @@ For every page you created or edited in step 5:
 
 ## 7. File cross-cutting open questions
 
-Any question from step 3 that doesn't cleanly belong to one page → file as `.open-questions/<slug>.md` using the open-question template (frontmatter + `## Context / ## The question / ## What we know / ## What we'd need to decide`).
+Any question from step 3 that doesn't cleanly belong to one page → file as `.open-questions/<slug>.md` using the open-question template (frontmatter + `## Context / ## The question / ## Related files / ## What we know / ## What we'd need to decide`).
+
+The `## Related files` section is **mandatory**. Populate it with markdown links — `[label](relative/path)` — to every page the question touches: the source(s) you just ingested in step 1, any existing wiki pages that informed the question, and any pages whose claims will need updating once the question resolves. Bare paths do not count; the link graph only picks up real markdown links. If you cannot name any related file, reconsider whether the item is really an open question or just a note that belongs inline on the source's summary page.
 
 ## 8. Update index.md
 
