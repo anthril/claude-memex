@@ -16,12 +16,20 @@ this 5-minute protocol gives you a real number instead of a hunch.
 
 ### Comparison — Memex disabled
 
-1. In the same project, rename the wiki folder so the hooks see no project root:
+1. In the same project, rename the **config file** so every hook silently
+   exits:
    ```bash
-   mv .memex .memex.disabled
+   # bash / git-bash
+   mv memex.config.json memex.config.json.disabled
+   # PowerShell
+   Move-Item memex.config.json memex.config.json.disabled
    ```
-   This makes `find_project_root()` return `None` and every Memex hook
-   silently exits without injecting context.
+   `find_project_root()` will still locate the project via the leftover
+   `.memex/` directory, but `load_config_from()` returns `None` because
+   the config file is gone — and every Memex hook exits at that branch
+   before injecting any context. Renaming `.memex/` alone is **not enough**:
+   the hooks fall back to discovering the project via `memex.config.json`,
+   so both the directory and the config drive the discovery.
 2. Restart Claude Code (so `SessionStart` re-fires without Memex context).
 3. Run the **same 5 interactions** as before — same files, same questions,
    same edits. Use a fresh context to avoid cache effects.
@@ -30,8 +38,32 @@ this 5-minute protocol gives you a real number instead of a hunch.
 ### Restore
 
 ```bash
-mv .memex.disabled .memex
+# bash / git-bash
+mv memex.config.json.disabled memex.config.json
+# PowerShell
+Move-Item memex.config.json.disabled memex.config.json
 ```
+
+### Toggle helper (optional)
+
+If you'll be flipping back and forth, drop this in `scripts/memex-toggle.sh`:
+
+```bash
+#!/usr/bin/env bash
+set -e
+cfg=memex.config.json
+off=memex.config.json.disabled
+if [ -f "$cfg" ]; then
+  mv "$cfg" "$off" && echo "Memex DISABLED for this project."
+elif [ -f "$off" ]; then
+  mv "$off" "$cfg" && echo "Memex ENABLED for this project."
+else
+  echo "No memex.config.json found — is this a memex-enabled project?" >&2
+  exit 1
+fi
+```
+
+(PowerShell equivalent uses `Move-Item` with the same logic.)
 
 ### (Optional) Cross-project check
 
