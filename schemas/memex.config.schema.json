@@ -215,6 +215,40 @@
         }
       },
       "additionalProperties": true
+    },
+    "autopilot": {
+      "type": "object",
+      "description": "Optional configuration for the Memex Autopilot extension. Absent block = autopilot disabled. State store lives at .memex/.autopilot/.",
+      "properties": {
+        "locked_paths": {
+          "type": "array",
+          "description": "Project-relative posix paths that the autopilot write-guard hook must hard-block on Write/Edit. An entry ending with `/` is a prefix match; otherwise an exact match. Always enforced (denylist applies even when no autopilot session is running).",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "shared_workspaces": {
+          "type": "array",
+          "description": "Path prefixes (each ending with `/`) where autopilot worker subagents are allowed to write outside their per-worker sandbox. Useful for letting workers share an audit-output directory.",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "task_kinds": {
+          "type": "object",
+          "description": "Per-task-kind overrides. Keys are task kinds (e.g. `oq-investigate`, `owner-action-triage`); values override the default specialist subagent name, prompt template, and constraint caps.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "specialist": { "type": "string", "description": "Subagent name to dispatch for this task kind." },
+              "prompt_template": { "type": "string", "description": "Prompt template; supports {target_path}, {slug}, {target} placeholders." },
+              "max_tool_calls": { "type": "integer", "minimum": 1 },
+              "max_tokens": { "type": "integer", "minimum": 1 },
+              "deadline_min": { "type": "integer", "minimum": 1 }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

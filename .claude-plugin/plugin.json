@@ -1,7 +1,7 @@
 {
   "name": "memex",
-  "version": "0.1.0-alpha.8",
-  "description": "A Claude-maintained wiki for any project. Hook-enforced doc discipline; LLM-owned knowledge base; ingest/query/lint loop, plus an optional self-hosted browsable docsite (memex-docsite). Inspired by Karpathy's llm-wiki gist.",
+  "version": "0.2.0-alpha.0",
+  "description": "A Claude-maintained wiki for any project. Hook-enforced doc discipline; LLM-owned knowledge base; ingest/query/lint loop, plus an optional self-hosted browsable docsite (memex-docsite) and an opt-in multi-agent autopilot coordinator that scans open questions / owner-actions and routes specialist reports to .memex/.inbox/. Inspired by Karpathy's llm-wiki gist.",
   "author": {
     "name": "Anthril",
     "email": "john@anthril.com",
@@ -18,6 +18,8 @@
     "memex",
     "llm-wiki",
     "doc-enforcement",
-    "docsite"
+    "docsite",
+    "autopilot",
+    "multi-agent"
   ]
 }

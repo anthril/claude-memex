@@ -100,6 +100,40 @@ See [`docs/README.md`](docs/README.md) for the full command reference and cookbo
 
 ---
 
+## Optional: Memex Autopilot
+
+The memex plugin ships an **opt-in continuous-loop coordinator** that scans the
+Memex backlog (open questions, project-owner actions), dispatches specialist
+subagents in worktrees, and routes their reports to `.memex/.inbox/` for human
+review. **Nothing is committed autonomously.**
+
+```bash
+/memex:autopilot-install   # scaffolds .memex/.autopilot/
+/memex:autopilot-tick      # fire one coordinator tick by hand
+/memex:autopilot-status    # last tick, in-flight workers, inbox count
+/memex:autopilot-pause     # kill switch
+```
+
+Configuration lives in `memex.config.json#/autopilot`:
+
+```json
+{
+  "autopilot": {
+    "locked_paths": ["docs/charter.md", "policies/"],
+    "shared_workspaces": ["audits/"],
+    "task_kinds": {
+      "oq-investigate": { "specialist": "memex-planner" }
+    }
+  }
+}
+```
+
+Originated in the [AURORA project](https://github.com/anthril/aurora); generalised
+once it became clear the load-bearing inputs were Memex primitives. See
+[`docs/autopilot.md`](docs/autopilot.md) for the full guide.
+
+---
+
 ## Why not just use CLAUDE.md?
 
 `CLAUDE.md` is project memory — one file, read at session start, covering build commands and architectural notes. Memex is complementary, not a replacement:
