@@ -27,6 +27,8 @@ be liberal in what it accepts — the index format is author-controlled.
 """
 from __future__ import annotations
 
+import json
+import os
 import re
 
 # `[text](target)` where target is a relative path (not http/https/mailto)
@@ -54,6 +56,64 @@ def parse_index(content: str) -> dict[str, set[str]]:
             sections[current].add(link_m.group(2).strip())
         for wl_m in WIKILINK_RE.finditer(line):
             sections[current].add(wl_m.group(1).strip())
+    return sections
+
+
+def parse_index_file_cached(index_path: str, ops_root: str) -> dict[str, set[str]]:
+    """Parse `index_path`, reusing a cached parse keyed by file mtime.
+
+    Cache lives at `<ops_root>/.state/index-parse.json`. On a hit (mtime matches)
+    we deserialize the cached parse instead of re-reading + re-regexing the file.
+    `index-update.py` fires on every Write/Edit of a .md file under the wiki,
+    so a writing-heavy session would otherwise re-parse the same index N times.
+
+    The cache invalidates automatically when `index.md` changes (Claude bumps
+    it after adding a new entry, which sets a new mtime, which invalidates here).
+
+    Failures fall back to an uncached parse — never raises.
+    """
+    try:
+        mtime = os.path.getmtime(index_path)
+    except OSError:
+        return {}
+
+    state_dir = os.path.join(ops_root.rstrip("/").rstrip("\\"), ".state")
+    cache_path = os.path.join(state_dir, "index-parse.json")
+
+    try:
+        with open(cache_path, encoding="utf-8") as fh:
+            cached = json.load(fh)
+        if (
+            isinstance(cached, dict)
+            and cached.get("path") == index_path
+            and float(cached.get("mtime", -1)) == mtime
+            and isinstance(cached.get("sections"), dict)
+        ):
+            return {name: set(refs) for name, refs in cached["sections"].items()}
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        pass
+
+    try:
+        with open(index_path, encoding="utf-8") as fh:
+            content = fh.read()
+    except OSError:
+        return {}
+    sections = parse_index(content)
+
+    try:
+        os.makedirs(state_dir, exist_ok=True)
+        with open(cache_path, "w", encoding="utf-8") as fh:
+            json.dump(
+                {
+                    "path": index_path,
+                    "mtime": mtime,
+                    "sections": {name: sorted(refs) for name, refs in sections.items()},
+                },
+                fh,
+            )
+    except OSError:
+        pass
+
     return sections
 
 

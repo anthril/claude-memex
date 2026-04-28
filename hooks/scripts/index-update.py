@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from _lib.config import load_config_for_file
 from _lib.frontmatter import parse as parse_frontmatter
-from _lib.index_parse import contains_reference, parse_index, suggest_section
+from _lib.index_parse import contains_reference, parse_index_file_cached, suggest_section
 from _lib.paths import normalise
 
 
@@ -57,17 +57,12 @@ def main() -> None:
         sys.exit(0)
 
     index_rel = cfg.get("index", {}).get("path", "index.md")
-    index_path = os.path.join(cfg["__project_root"], cfg["root"], index_rel)
+    ops_root = os.path.join(cfg["__project_root"], cfg["root"])
+    index_path = os.path.join(ops_root, index_rel)
     if not os.path.isfile(index_path):
         sys.exit(0)
 
-    try:
-        with open(index_path, encoding="utf-8") as f:
-            index_content = f.read()
-    except Exception:
-        sys.exit(0)
-
-    sections = parse_index(index_content)
+    sections = parse_index_file_cached(index_path, ops_root)
 
     try:
         with open(file_path, encoding="utf-8") as f:

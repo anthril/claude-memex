@@ -175,3 +175,41 @@ If none of the built-in profiles fits your project's shape, run `/memex:init-pro
 ## Commit policy for `.memex/.state/`
 
 Default: the `.gitignore` shipped by `/memex:init` excludes `.memex/.state/` — per-session state shouldn't be in git history. If you want the `precompact-snapshot` files to be committed (useful for the research angle), remove that line.
+
+---
+
+## Reducing token usage
+
+Memex hooks inject context on `SessionStart`, every `UserPromptSubmit`, and on `Stop`. The defaults are tuned for value-per-token, but if you're hitting your budget you can dial them down per-project in `memex.config.json`. None of these are visible to other contributors — they only affect your local session cost.
+
+```jsonc
+{
+  "search": {
+    "maxContextPages": 1     // default 3 — cuts UserPromptSubmit cost ~3×
+  },
+  "hookEvents": {
+    "sessionStart": {
+      "injectIndex": false,     // default true — skip the 3 KB index head
+      "injectRecentLog": 0      // default 5 — skip recent log entries
+    },
+    "stop": {
+      "appendLog": false,       // default true — usually cheap, but skips one file write
+      "staleCheck": false       // default true — skips stale-doc detection on Stop
+    }
+  }
+}
+```
+
+For the most aggressive cut, set `maxContextPages: 0` to disable per-prompt retrieval entirely. You'll still have the wiki and can query it on-demand with `/memex:query`; Claude just won't get auto-suggested pages on every turn.
+
+Want to know whether Memex is actually the bottleneck before tuning anything? Run the [A/B test protocol](../scripts/usage-ab-test.md) — it takes about 5 minutes and gives you a real number instead of a guess.
+
+---
+
+## What the conservative perf-pass changes (orchestrated Stop hook)
+
+As of the conservative-fix pass, the four `Stop` hooks (`stop-log-append`, `stop-stale-check`, `stop-open-questions-check`, `stop-project-owner-actions-check`) are wired through one entry point — `stop-orchestrator.py` — that walks the session transcript ONCE via `_lib/transcript.py:collect_tool_writes` and dispatches to each module's `run()` function. Each module is still callable directly (its `main()` is preserved, so existing tests and any external invocations keep working), but you'll only see one Stop hook in your `hooks.json`. Output to Claude is identical: each module's `additionalContext` block concatenated in order.
+
+Similarly, `index-update.py` now reads `index.md` through `_lib/index_parse.py:parse_index_file_cached`, which keeps an mtime-keyed cache at `.memex/.state/index-parse.json`. In a writing-heavy session (many wiki edits), this skips re-parsing the same index N times.
+
+These are pure CPU/IO wins — they don't change what Claude sees, so they don't directly reduce token cost. Use the tuning knobs above for that.

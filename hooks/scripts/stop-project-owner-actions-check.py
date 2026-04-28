@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from _lib.config import load_config_from
 from _lib.paths import find_project_root, normalise
+from _lib.transcript import collect_tool_writes
 
 # Phrases that strongly suggest an action the project owner must take.
 # Word-boundary anchored to avoid matching mid-word noise.
@@ -53,34 +54,8 @@ STATUS_RE = re.compile(r"^status:\s*([^\s]+)\s*$", re.MULTILINE)
 
 
 def session_writes(transcript_path: str) -> set[str]:
-    """All Write/Edit file paths the agent touched this session."""
-    files: set[str] = set()
-    if not transcript_path or not os.path.isfile(transcript_path):
-        return files
-    try:
-        with open(transcript_path, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    msg = json.loads(line)
-                except Exception:
-                    continue
-                blocks = (msg.get("message") or {}).get("content") or []
-                if not isinstance(blocks, list):
-                    continue
-                for b in blocks:
-                    if (
-                        isinstance(b, dict)
-                        and b.get("type") == "tool_use"
-                        and b.get("name") in ("Write", "Edit")
-                    ):
-                        fp = (b.get("input") or {}).get("file_path")
-                        if fp:
-                            files.add(fp)
-    except Exception:
-        pass
+    """Backwards-compat wrapper around `_lib.transcript.collect_tool_writes`."""
+    _, files = collect_tool_writes(transcript_path)
     return files
 
 
@@ -139,27 +114,14 @@ def overdue(entries: list[dict]) -> list[dict]:
     return out
 
 
-def main() -> None:
-    try:
-        payload = json.load(sys.stdin)
-    except Exception:
-        payload = {}
-
-    cwd = payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
-    project_root = find_project_root(cwd)
-    if not project_root:
-        sys.exit(0)
-    cfg = load_config_from(project_root)
-    if not cfg:
-        sys.exit(0)
-
+def run(payload: dict, project_root: str, cfg: dict, writes: int, files: set[str]) -> str | None:
+    """Detect unfiled owner actions + overdue pending actions. Returns context or None."""
     root = cfg["root"]
-    transcript_path = payload.get("transcript_path") or payload.get("transcriptPath") or ""
 
     # Findings part 1: owner-phrase hits in session writes that aren't already in
     # `.project-owner-actions/` (no point flagging files in that folder — they're
     # the right place by definition).
-    written = session_writes(transcript_path)
+    written = files
     actions_prefix = normalise(
         os.path.join(project_root, root.rstrip("/"), ".project-owner-actions")
     )
@@ -205,7 +167,7 @@ def main() -> None:
             pass
 
     if not phrase_findings and not overdue_entries:
-        sys.exit(0)
+        return None
 
     lines = ["### Memex project-owner-actions check", ""]
 
@@ -243,13 +205,29 @@ def main() -> None:
             "downgrade severity if the blocker is no longer load-bearing."
         )
 
-    out = {
-        "hookSpecificOutput": {
-            "hookEventName": "Stop",
-            "additionalContext": "\n".join(lines),
-        }
-    }
-    sys.stdout.write(json.dumps(out))
+    return "\n".join(lines)
+
+
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except Exception:
+        payload = {}
+
+    cwd = payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    project_root = find_project_root(cwd)
+    if not project_root:
+        sys.exit(0)
+    cfg = load_config_from(project_root)
+    if not cfg:
+        sys.exit(0)
+
+    transcript_path = payload.get("transcript_path") or payload.get("transcriptPath") or ""
+    writes, files = collect_tool_writes(transcript_path)
+    ctx = run(payload, project_root, cfg, writes, files)
+    if ctx:
+        out = {"hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": ctx}}
+        sys.stdout.write(json.dumps(out))
     sys.exit(0)
 
 

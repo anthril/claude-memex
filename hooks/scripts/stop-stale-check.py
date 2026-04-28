@@ -22,33 +22,17 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _lib.config import load_config_from
 from _lib.paths import find_project_root, normalise
 from _lib.patterns import glob_to_regex, substitute
+from _lib.transcript import collect_tool_writes
 
 
 def session_writes(transcript_path: str) -> set[str]:
-    files: set[str] = set()
-    if not transcript_path or not os.path.isfile(transcript_path):
-        return files
-    try:
-        with open(transcript_path, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    msg = json.loads(line)
-                except Exception:
-                    continue
-                blocks = (msg.get("message") or {}).get("content") or []
-                if not isinstance(blocks, list):
-                    continue
-                for b in blocks:
-                    if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("name") in ("Write", "Edit"):
-                        fp = (b.get("input") or {}).get("file_path")
-                        if fp:
-                            files.add(normalise(os.path.abspath(fp)))
-    except Exception:
-        pass
-    return files
+    """Backwards-compatible wrapper around `_lib.transcript.collect_tool_writes`.
+
+    Returns the set of touched files normalised to absolute, forward-slash form
+    (the historical shape this module has always emitted).
+    """
+    _, raw = collect_tool_writes(transcript_path)
+    return {normalise(os.path.abspath(fp)) for fp in raw}
 
 
 def updated_field(doc_path: str):
@@ -61,32 +45,24 @@ def updated_field(doc_path: str):
     return m.group(1).strip() if m else None
 
 
-def main() -> None:
-    try:
-        payload = json.load(sys.stdin)
-    except Exception:
-        payload = {}
+def run(payload: dict, project_root: str, cfg: dict, writes: int, files: set[str]) -> str | None:
+    """Detect wiki pages with stale `updated:` against touched code. Returns context or None.
 
-    cwd = payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
-    project_root = find_project_root(cwd)
-    if not project_root:
-        sys.exit(0)
-    cfg = load_config_from(project_root)
-    if not cfg:
-        sys.exit(0)
-
+    `files` is the raw set from `_lib.transcript.collect_tool_writes`. We
+    normalise locally — this lets the orchestrator share one parse with other
+    Stop hooks that need the raw form.
+    """
     opts = (cfg.get("hookEvents") or {}).get("stop") or {}
     if opts.get("staleCheck", True) is False:
-        sys.exit(0)
+        return None
 
     mappings = cfg.get("codeToDocMapping") or []
     if not mappings:
-        sys.exit(0)
+        return None
 
-    transcript_path = payload.get("transcript_path") or payload.get("transcriptPath") or ""
-    touched = session_writes(transcript_path)
+    touched = {normalise(os.path.abspath(fp)) for fp in files}
     if not touched:
-        sys.exit(0)
+        return None
 
     proj_norm = normalise(os.path.abspath(project_root)) + "/"
     today = datetime.date.today().isoformat()
@@ -117,15 +93,36 @@ def main() -> None:
                 stale.append((cfg["root"] + "/" + doc_rel, u or "(missing)", os.path.relpath(f, project_root)))
 
     if not stale:
-        sys.exit(0)
+        return None
 
     lines = ["### Memex stale-check", "", "The following wiki pages reference code touched this session but were NOT updated:", ""]
     for doc, u, src in stale[:10]:
         lines.append(f"- **{doc}** (updated: `{u}`) — code touched: `{src}`")
     lines.append("")
     lines.append(f"Bump `updated:` to `{today}` and append to the page's changelog before closing out.")
-    out = {"hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": "\n".join(lines)}}
-    sys.stdout.write(json.dumps(out))
+    return "\n".join(lines)
+
+
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except Exception:
+        payload = {}
+
+    cwd = payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    project_root = find_project_root(cwd)
+    if not project_root:
+        sys.exit(0)
+    cfg = load_config_from(project_root)
+    if not cfg:
+        sys.exit(0)
+
+    transcript_path = payload.get("transcript_path") or payload.get("transcriptPath") or ""
+    writes, files = collect_tool_writes(transcript_path)
+    ctx = run(payload, project_root, cfg, writes, files)
+    if ctx:
+        out = {"hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": ctx}}
+        sys.stdout.write(json.dumps(out))
     sys.exit(0)
 
 

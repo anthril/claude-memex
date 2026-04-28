@@ -17,35 +17,23 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from _lib.config import load_config_from
 from _lib.paths import find_project_root, normalise
+from _lib.transcript import collect_tool_writes
 
 MARKER_RE = re.compile(r"\b(TODO|TBD|XXX|FIXME)\b[:\s]")
 
 
 def session_wiki_writes(transcript_path: str, ops_prefix: str) -> set[str]:
-    files: set[str] = set()
-    if not transcript_path or not os.path.isfile(transcript_path):
-        return files
-    try:
-        with open(transcript_path, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    msg = json.loads(line)
-                except Exception:
-                    continue
-                blocks = (msg.get("message") or {}).get("content") or []
-                if not isinstance(blocks, list):
-                    continue
-                for b in blocks:
-                    if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("name") in ("Write", "Edit"):
-                        fp = (b.get("input") or {}).get("file_path")
-                        if fp and ops_prefix in normalise(fp) and fp.endswith(".md"):
-                            files.add(fp)
-    except Exception:
-        pass
-    return files
+    """Backwards-compat wrapper: filter `collect_tool_writes` to wiki .md files."""
+    _, raw = collect_tool_writes(transcript_path)
+    return {
+        fp for fp in raw
+        if fp and ops_prefix in normalise(fp) and fp.endswith(".md")
+    }
+
+
+def filter_wiki_md_writes(files: set[str], ops_prefix: str) -> set[str]:
+    """Pure helper used by run() — same shape as session_wiki_writes' output."""
+    return {fp for fp in files if fp and ops_prefix in normalise(fp) and fp.endswith(".md")}
 
 
 def scan_file(fp):
@@ -62,25 +50,16 @@ def scan_file(fp):
     return hits
 
 
-def main() -> None:
-    try:
-        payload = json.load(sys.stdin)
-    except Exception:
-        payload = {}
+def run(payload: dict, project_root: str, cfg: dict, writes: int, files: set[str]) -> str | None:
+    """Scan touched wiki .md files for inline TODO/TBD/XXX/FIXME markers.
 
-    cwd = payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
-    project_root = find_project_root(cwd)
-    if not project_root:
-        sys.exit(0)
-    cfg = load_config_from(project_root)
-    if not cfg:
-        sys.exit(0)
-
+    Persists findings to `.memex/.state/inline-todos.json` for the docsite
+    banner; returns additionalContext or None.
+    """
     ops_prefix = "/" + cfg["root"].rstrip("/").split("/")[-1] + "/"
-    transcript_path = payload.get("transcript_path") or payload.get("transcriptPath") or ""
-    written = session_wiki_writes(transcript_path, ops_prefix)
+    written = filter_wiki_md_writes(files, ops_prefix)
     if not written:
-        sys.exit(0)
+        return None
 
     findings = []
     for fp in sorted(written):
@@ -112,7 +91,7 @@ def main() -> None:
             pass
 
     if not findings:
-        sys.exit(0)
+        return None
 
     lines = [
         "### Memex open-questions check",
@@ -124,9 +103,29 @@ def main() -> None:
         lines.append(f"- `{rel}:{lineno}` — {text}")
     lines.append("")
     lines.append("Promote each to `.open-questions/<slug>.md` or to a scoped `## Open questions` section on the owning page. Do NOT leave them inline.")
+    return "\n".join(lines)
 
-    out = {"hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": "\n".join(lines)}}
-    sys.stdout.write(json.dumps(out))
+
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except Exception:
+        payload = {}
+
+    cwd = payload.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    project_root = find_project_root(cwd)
+    if not project_root:
+        sys.exit(0)
+    cfg = load_config_from(project_root)
+    if not cfg:
+        sys.exit(0)
+
+    transcript_path = payload.get("transcript_path") or payload.get("transcriptPath") or ""
+    writes, files = collect_tool_writes(transcript_path)
+    ctx = run(payload, project_root, cfg, writes, files)
+    if ctx:
+        out = {"hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": ctx}}
+        sys.stdout.write(json.dumps(out))
     sys.exit(0)
 
 
