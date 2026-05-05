@@ -1,0 +1,122 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthril/claude-memex/main/schemas/memex.config.schema.json",
+  "version": "1",
+  "profile": "venture",
+  "root": ".memex",
+
+  "allowedTopLevel": [
+    "README.md",
+    "AGENTS.md",
+    "index.md",
+    "log.md",
+    ".open-questions",
+    ".project-owner-actions",
+    ".rules",
+    ".state",
+    "00-vision",
+    "01-hypotheses",
+    "02-customer-discovery",
+    "03-value-proposition",
+    "04-competitors",
+    "05-business-model",
+    "06-relationships-channels",
+    "07-validation",
+    "08-prototype",
+    "09-mvp"
+  ],
+
+  "datedFolders": {
+    "paths": [],
+    "format": "DDMMYYYY-HHMM"
+  },
+
+  "readmeRequired": [
+    "02-customer-discovery/segments/*",
+    "04-competitors/swot/*",
+    "08-prototype/digital/*",
+    "09-mvp/architecture/*"
+  ],
+
+  "frontmatter": {
+    "appliesTo": [
+      "**/README.md",
+      "**/AGENTS.md",
+      "00-vision/**/*.md",
+      "01-hypotheses/**/*.md",
+      "02-customer-discovery/**/*.md",
+      "03-value-proposition/**/*.md",
+      "04-competitors/**/*.md",
+      "05-business-model/**/*.md",
+      "06-relationships-channels/**/*.md",
+      "07-validation/**/*.md",
+      "08-prototype/**/*.md",
+      "09-mvp/**/*.md"
+    ],
+    "required": ["title", "slug", "type", "status", "owner", "created", "updated"],
+    "enum": {
+      "type": [
+        "vision",
+        "segment",
+        "profile",
+        "interview",
+        "hypothesis",
+        "test-card",
+        "learning-card",
+        "vpc",
+        "competitor",
+        "swot",
+        "bmc",
+        "channel",
+        "funnel",
+        "prototype",
+        "feedback",
+        "mvp-spec",
+        "adr",
+        "schema",
+        "deploy-plan",
+        "analytics-plan",
+        "open-question",
+        "rule"
+      ],
+      "status": ["draft", "active", "deprecated", "superseded"]
+    }
+  },
+
+  "naming": {
+    "exceptions": ["README.md", "AGENTS.md", "CHANGELOG.md", ".resolved", ".gitkeep"]
+  },
+
+  "codeToDocMapping": [],
+
+  "log": {
+    "path": "log.md",
+    "entryPrefix": "## [{date}] {event} | {subject}"
+  },
+
+  "index": {
+    "path": "index.md",
+    "sections": [
+      "Vision",
+      "Segments",
+      "Hypotheses (open)",
+      "Hypotheses (validated)",
+      "Hypotheses (refuted)",
+      "VPCs",
+      "BMC versions",
+      "Competitors",
+      "Test cards",
+      "Learning cards",
+      "Channels and funnel",
+      "Prototypes",
+      "MVP scope",
+      "ADRs",
+      "Open Questions",
+      "Recent Activity"
+    ]
+  },
+
+  "search": {
+    "engine": "tantivy",
+    "maxContextPages": 5
+  }
+}

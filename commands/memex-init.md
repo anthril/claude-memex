@@ -14,7 +14,7 @@ Scaffold `.memex/`, `memex.config.json`, and a `CLAUDE.md` reference into the cu
 /memex:init [profile]
 ```
 
-- `profile` (optional, default `generic`) — one of: `engineering-ops`, `research-wiki`, `research-project`, `book-companion`, `personal-journal`, `generic`
+- `profile` (optional, default `generic`) — one of: `engineering-ops`, `research-wiki`, `research-project`, `book-companion`, `personal-journal`, `venture`, `generic`
 
 If none of the built-in profiles fits, use [`/memex:init-profile`](memex-init-profile.md) — the profile-builder skill surveys your project and generates a tailored custom profile.
 
@@ -58,6 +58,7 @@ Print a summary:
 | `research-project` | All of `research-wiki` plus `research/{hypotheses,literature-review,methodology,experiments,prompts,roadmap.md}`, `architecture/`, `systems/`, `evaluation/` |
 | `book-companion` | `raw/chapters/`, `wiki/{characters,places,themes,plot-threads}/`, `timeline.md` |
 | `personal-journal` | `raw/entries/`, `wiki/{topics,goals,reflections}/` |
+| `venture` | Customer-development workspace for ventures (COMP1100/COMP7110): `00-vision/`, `01-hypotheses/`, `02-customer-discovery/{segments,test-cards,learning-cards}/`, `03-value-proposition/`, `04-competitors/{swot}/`, `05-business-model/`, `06-relationships-channels/`, `07-validation/`, `08-prototype/{paper,digital,feedback}/`, `09-mvp/{architecture,schema,deploy,analytics}/`, plus three blocking guard-rails in `.rules/`. Pairs with [`@anthril/startup-factory`](https://github.com/anthril/startup-factory). |
 | `generic` | `topics/`, `index.md`, `log.md`, `.open-questions/` |
 
 All profiles share `AGENTS.md`, `README.md`, `index.md`, `log.md`, `.open-questions/`, `.state/`.
